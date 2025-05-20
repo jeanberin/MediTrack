@@ -2,48 +2,31 @@
 "use client"
 
 import * as React from "react"
-import type { DayPickerProps, CaptionLabelProps } from "react-day-picker" // Import DayPickerProps and CaptionLabelProps
+import type { DayPickerProps } from "react-day-picker" 
 import { DayPicker } from "react-day-picker"
 import { ChevronLeft, ChevronRight } from "lucide-react"
-import { format } from 'date-fns'; // Import format from date-fns
 
 import { cn } from "@/lib/utils"
 import { buttonVariants } from "@/components/ui/button"
 
 export type CalendarProps = DayPickerProps
 
-// Custom CaptionLabel for when dropdowns are active
-function CustomDropdownCaptionLabel(props: CaptionLabelProps) {
-  return (
-    <div className="flex flex-col items-center text-sm font-medium py-1" aria-live="polite" role="status">
-      <span>Month: {format(props.displayMonth, "MMMM")}</span>
-      <span>Year: {format(props.displayMonth, "yyyy")}</span>
-    </div>
-  );
-}
-
 function Calendar({
   className,
   classNames,
   showOutsideDays = true,
-  components: passedComponents, // Destructure passed components
-  ...props // captionLayout is in here
+  components: passedComponents, 
+  ...props 
 }: CalendarProps) {
   const finalComponents: CalendarProps['components'] = {
-    IconLeft: ({ className: iconClassName, ...iconProps }) => (
-      <ChevronLeft className={cn("h-4 w-4", iconClassName)} {...iconProps} />
+    IconLeft: ({ ...iconProps }) => (
+      <ChevronLeft className={cn("h-4 w-4")} {...iconProps} />
     ),
-    IconRight: ({ className: iconClassName, ...iconProps }) => (
-      <ChevronRight className={cn("h-4 w-4", iconClassName)} {...iconProps} />
+    IconRight: ({ ...iconProps }) => (
+      <ChevronRight className={cn("h-4 w-4")} {...iconProps} />
     ),
-    ...passedComponents, // Spread any user-passed components first
+    ...passedComponents, 
   };
-
-  // If dropdowns are used for caption, use our custom label.
-  // Otherwise, DayPicker will use its default or what's passed in passedComponents.
-  if (props.captionLayout === "dropdown-buttons" || props.captionLayout === "dropdown") {
-    finalComponents.CaptionLabel = CustomDropdownCaptionLabel;
-  }
 
   return (
     <DayPicker
@@ -53,7 +36,7 @@ function Calendar({
         months: "flex flex-col sm:flex-row space-y-4 sm:space-x-4 sm:space-y-0",
         month: "space-y-4",
         caption: "flex justify-center pt-1 relative items-center",
-        // caption_label will be styled by CustomDropdownCaptionLabel's internal styling
+        caption_label: "text-sm font-medium", // Styles the main "Month Year" display
         nav: "space-x-1 flex items-center",
         nav_button: cn(
           buttonVariants({ variant: "outline" }),
@@ -76,7 +59,7 @@ function Calendar({
           "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground focus:bg-primary focus:text-primary-foreground",
         day_today: "bg-accent text-accent-foreground",
         day_outside:
-          "day-outside text-muted-foreground opacity-50 aria-selected:bg-accent/50 aria-selected:text-muted-foreground aria-selected:opacity-30", // Updated for better visibility of selected outside days
+          "day-outside text-muted-foreground opacity-50 aria-selected:bg-accent/50 aria-selected:text-muted-foreground aria-selected:opacity-30", 
         day_disabled: "text-muted-foreground opacity-50",
         day_range_middle:
           "aria-selected:bg-accent aria-selected:text-accent-foreground",
@@ -84,7 +67,7 @@ function Calendar({
         ...classNames,
       }}
       components={finalComponents}
-      {...props} // Pass all other props, including captionLayout
+      {...props} 
     />
   )
 }
