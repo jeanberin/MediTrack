@@ -1,20 +1,38 @@
+
 "use client"
 
 import * as React from "react"
-import { ChevronLeft, ChevronRight } from "lucide-react"
+import type { DayPickerProps } from "react-day-picker" // Import DayPickerProps for explicit typing
 import { DayPicker } from "react-day-picker"
+import { ChevronLeft, ChevronRight } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 import { buttonVariants } from "@/components/ui/button"
 
-export type CalendarProps = React.ComponentProps<typeof DayPicker>
+export type CalendarProps = DayPickerProps
 
 function Calendar({
   className,
   classNames,
   showOutsideDays = true,
-  ...props
+  components: passedComponents, // Destructure passed components
+  ...props // captionLayout is in here
 }: CalendarProps) {
+  const finalComponents: CalendarProps['components'] = {
+    IconLeft: ({ className: iconClassName, ...iconProps }) => (
+      <ChevronLeft className={cn("h-4 w-4", iconClassName)} {...iconProps} />
+    ),
+    IconRight: ({ className: iconClassName, ...iconProps }) => (
+      <ChevronRight className={cn("h-4 w-4", iconClassName)} {...iconProps} />
+    ),
+    ...passedComponents, // Spread any user-passed components first
+  };
+
+  // If dropdowns are used for caption, hide the default text label part
+  if (props.captionLayout === "dropdown-buttons" || props.captionLayout === "dropdown") {
+    finalComponents.CaptionLabel = () => null;
+  }
+
   return (
     <DayPicker
       showOutsideDays={showOutsideDays}
@@ -23,7 +41,7 @@ function Calendar({
         months: "flex flex-col sm:flex-row space-y-4 sm:space-x-4 sm:space-y-0",
         month: "space-y-4",
         caption: "flex justify-center pt-1 relative items-center",
-        caption_label: "text-sm font-medium",
+        caption_label: "text-sm font-medium", // This class will no longer apply if CaptionLabel renders null
         nav: "space-x-1 flex items-center",
         nav_button: cn(
           buttonVariants({ variant: "outline" }),
@@ -53,15 +71,8 @@ function Calendar({
         day_hidden: "invisible",
         ...classNames,
       }}
-      components={{
-        IconLeft: ({ className, ...props }) => (
-          <ChevronLeft className={cn("h-4 w-4", className)} {...props} />
-        ),
-        IconRight: ({ className, ...props }) => (
-          <ChevronRight className={cn("h-4 w-4", className)} {...props} />
-        ),
-      }}
-      {...props}
+      components={finalComponents}
+      {...props} // Pass all other props, including captionLayout
     />
   )
 }
