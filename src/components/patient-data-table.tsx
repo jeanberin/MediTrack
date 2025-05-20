@@ -30,7 +30,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
-import { format } from 'date-fns';
+import { format, isValid } from 'date-fns'; // Import isValid
 
 
 interface PatientDataProps {
@@ -179,14 +179,20 @@ export function PatientDataTable({}: PatientDataProps) {
                   {filteredPatients.map((patient) => (
                     <TableRow key={patient.id}>
                       <TableCell className="font-medium">{patient.fullName}</TableCell>
-                      <TableCell>{format(new Date(patient.dateOfBirth), "PPP")}</TableCell>
+                      <TableCell>
+                        {patient.dateOfBirth && isValid(new Date(patient.dateOfBirth)) 
+                          ? format(new Date(patient.dateOfBirth), "PPP") 
+                          : 'N/A'}
+                      </TableCell>
                       <TableCell>
                         <Badge variant="secondary" className="capitalize">{patient.gender.replace('_', ' ')}</Badge>
                       </TableCell>
-                      <TableCell className="hidden md:table-cell">{patient.contactNumber}</TableCell>
+                      <TableCell className="hidden md:table-cell">{patient.mobileNo}</TableCell>
                       <TableCell className="hidden lg:table-cell">{patient.email}</TableCell>
                       <TableCell className="hidden sm:table-cell">
-                         {format(new Date(patient.submissionDate), "PPpp")}
+                         {patient.submissionDate && isValid(new Date(patient.submissionDate))
+                           ? format(new Date(patient.submissionDate), "PPpp")
+                           : 'N/A'}
                       </TableCell>
                       <TableCell className="text-right space-x-2">
                         <Button variant="outline" size="sm" onClick={() => handleEdit(patient)}>

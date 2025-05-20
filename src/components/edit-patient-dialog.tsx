@@ -39,73 +39,204 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
+import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
 import { CalendarIcon, Save, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { format } from 'date-fns';
-import { useEffect } from 'react';
+import { format, isValid } from 'date-fns';
+import { useEffect, useState } from 'react';
+
+const SectionTitle: React.FC<{ title: string; className?: string }> = ({ title, className }) => (
+  <h2 className={cn("text-xl font-semibold text-primary mt-6 mb-3 pb-2 border-b", className)}>{title}</h2>
+);
+
+const SubSectionTitle: React.FC<{ title: string; className?: string }> = ({ title, className }) => (
+  <h3 className={cn("text-lg font-medium text-foreground mt-4 mb-2", className)}>{title}</h3>
+);
 
 interface EditPatientDialogProps {
   patient: Patient | null;
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
-  onSave: (updatedPatient: Patient) => void; // Expects the full Patient object
+  onSave: (updatedPatient: Patient) => void;
 }
+
+const GENDERS = ['male', 'female', 'other', 'prefer_not_to_say'] as const;
+type GenderType = typeof GENDERS[number];
 
 export function EditPatientDialog({ patient, isOpen, onOpenChange, onSave }: EditPatientDialogProps) {
   const { toast } = useToast();
 
-  // Form uses PatientFormData for its structure, matching the schema
   const form = useForm<PatientFormData>({
     resolver: zodResolver(patientFormSchema),
   });
 
-  const watchHasOtherConditions = form.watch("hasOtherConditions");
+  const watchMedicalTreatmentNow = form.watch("q_medicalTreatmentNow");
+  const watchSeriousIllnessOperation = form.watch("q_seriousIllnessOperation");
+  const watchHospitalized = form.watch("q_hospitalized");
+  const watchTakingMedication = form.watch("q_takingMedication");
+  const watchAllergyOther = form.watch("allergy_other");
+  const watchCondOthers = form.watch("cond_others");
+
+  const [isMinor, setIsMinor] = useState(false);
+  const dob = form.watch("dateOfBirth");
+
+  useEffect(() => {
+    if (dob) {
+      try {
+        const birthDate = new Date(dob);
+        if (isValid(birthDate)) {
+          const today = new Date();
+          let age = today.getFullYear() - birthDate.getFullYear();
+          const m = today.getMonth() - birthDate.getMonth();
+          if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+            age--;
+          }
+          setIsMinor(age < 18);
+        } else {
+          setIsMinor(false);
+        }
+      } catch (e) {
+        setIsMinor(false);
+      }
+    } else {
+      setIsMinor(false);
+    }
+  }, [dob]);
 
   useEffect(() => {
     if (patient && isOpen) {
+      const dobForForm = (typeof patient.dateOfBirth === 'string' && patient.dateOfBirth.trim() !== '' && isValid(new Date(patient.dateOfBirth)))
+                       ? new Date(patient.dateOfBirth).toISOString().split('T')[0]
+                       : "";
+      const effectiveDateForForm = (patient.effectiveDate && typeof patient.effectiveDate === 'string' && patient.effectiveDate.trim() !== '' && isValid(new Date(patient.effectiveDate)))
+                                 ? new Date(patient.effectiveDate).toISOString().split('T')[0]
+                                 : "";
+      const lastDentalVisitForForm = (patient.lastDentalVisit && typeof patient.lastDentalVisit === 'string' && patient.lastDentalVisit.trim() !== '' && isValid(new Date(patient.lastDentalVisit)))
+                                   ? new Date(patient.lastDentalVisit).toISOString().split('T')[0]
+                                   : "";
+      const genderForForm = GENDERS.includes(patient.gender as GenderType) ? patient.gender : 'prefer_not_to_say';
+
+
       form.reset({
-        firstName: patient.firstName,
+        firstName: patient.firstName || "",
         middleName: patient.middleName || "",
-        lastName: patient.lastName,
-        dateOfBirth: patient.dateOfBirth,
-        gender: patient.gender,
-        contactNumber: patient.contactNumber,
-        email: patient.email,
-        address: patient.address,
-        medicalHistory: patient.medicalHistory,
-        currentMedications: patient.currentMedications || "",
-        symptoms: patient.symptoms,
-        hasHypertension: patient.hasHypertension || false,
-        hasDiabetes: patient.hasDiabetes || false,
-        hasAsthma: patient.hasAsthma || false,
-        hasOtherConditions: patient.hasOtherConditions || false,
-        otherConditions: patient.otherConditions || "",
-        insuranceProvider: patient.insuranceProvider || "",
-        insurancePolicyNumber: patient.insurancePolicyNumber || "",
+        lastName: patient.lastName || "",
+        dateOfBirth: dobForForm,
+        gender: genderForForm,
+        mobileNo: patient.mobileNo || "",
+        email: patient.email || "",
+        address: patient.address || "",
+        religion: patient.religion || "",
+        nationality: patient.nationality || "",
+        homeNo: patient.homeNo || "",
+        occupation: patient.occupation || "",
+        officeNo: patient.officeNo || "",
+        dentalInsurance: patient.dentalInsurance || "",
+        faxNo: patient.faxNo || "",
+        effectiveDate: effectiveDateForForm,
+        referredBy: patient.referredBy || "",
+        guardianEmail: patient.guardianEmail || "",
+        parentOrGuardianName: patient.parentOrGuardianName || "",
+        parentOrGuardianOccupation: patient.parentOrGuardianOccupation || "",
+        previousDentist: patient.previousDentist || "",
+        lastDentalVisit: lastDentalVisitForForm,
+        physicianName: patient.physicianName || "",
+        physicianSpecialty: patient.physicianSpecialty || "",
+        physicianOfficeAddress: patient.physicianOfficeAddress || "",
+        physicianOfficeNumber: patient.physicianOfficeNumber || "",
+        q_goodHealth: patient.q_goodHealth || false,
+        q_medicalTreatmentNow: patient.q_medicalTreatmentNow || false,
+        q_medicalTreatmentCondition: patient.q_medicalTreatmentCondition || "",
+        q_seriousIllnessOperation: patient.q_seriousIllnessOperation || false,
+        q_seriousIllnessOperationDetails: patient.q_seriousIllnessOperationDetails || "",
+        q_hospitalized: patient.q_hospitalized || false,
+        q_hospitalizedDetails: patient.q_hospitalizedDetails || "",
+        q_takingMedication: patient.q_takingMedication || false,
+        q_medicationDetails: patient.q_medicationDetails || "",
+        q_useTobacco: patient.q_useTobacco || false,
+        q_useDrugs: patient.q_useDrugs || false,
+        allergy_localAnaesthetic: patient.allergy_localAnaesthetic || false,
+        allergy_penicillin: patient.allergy_penicillin || false,
+        allergy_aspirin: patient.allergy_aspirin || false,
+        allergy_latex: patient.allergy_latex || false,
+        allergy_other: patient.allergy_other || false,
+        allergy_other_details: patient.allergy_other_details || "",
+        bleedingTime: patient.bleedingTime || "",
+        q_isPregnant: patient.q_isPregnant || false,
+        q_isNursing: patient.q_isNursing || false,
+        q_onBirthControl: patient.q_onBirthControl || false,
+        bloodType: patient.bloodType || "",
+        bloodPressure: patient.bloodPressure || "",
+        cond_highBloodPressure: patient.cond_highBloodPressure || false,
+        cond_heartDisease: patient.cond_heartDisease || false,
+        cond_cancerTumors: patient.cond_cancerTumors || false,
+        cond_lowBloodPressure: patient.cond_lowBloodPressure || false,
+        cond_heartMurmur: patient.cond_heartMurmur || false,
+        cond_anemia: patient.cond_anemia || false,
+        cond_epilepsyConvulsions: patient.cond_epilepsyConvulsions || false,
+        cond_hepatitisLiverDisease: patient.cond_hepatitisLiverDisease || false,
+        cond_angina: patient.cond_angina || false,
+        cond_aidsHiv: patient.cond_aidsHiv || false,
+        cond_rheumaticFever: patient.cond_rheumaticFever || false,
+        cond_asthma: patient.cond_asthma || false,
+        cond_std: patient.cond_std || false,
+        cond_hayFeverAllergies: patient.cond_hayFeverAllergies || false,
+        cond_emphysema: patient.cond_emphysema || false,
+        cond_stomachTroublesUlcers: patient.cond_stomachTroublesUlcers || false,
+        cond_respiratoryProblems: patient.cond_respiratoryProblems || false,
+        cond_bleedingProblems: patient.cond_bleedingProblems || false,
+        cond_faintingSeizure: patient.cond_faintingSeizure || false,
+        cond_hepatitisJaundice: patient.cond_hepatitisJaundice || false,
+        cond_bloodDisease: patient.cond_bloodDisease || false,
+        cond_rapidWeightLoss: patient.cond_rapidWeightLoss || false,
+        cond_tuberculosis: patient.cond_tuberculosis || false,
+        cond_heartInjuries: patient.cond_heartInjuries || false,
+        cond_radiationTherapy: patient.cond_radiationTherapy || false,
+        cond_swollenAnkles: patient.cond_swollenAnkles || false,
+        cond_arthritisRheumatism: patient.cond_arthritisRheumatism || false,
+        cond_jointReplacementImplant: patient.cond_jointReplacementImplant || false,
+        cond_kidneyDisease: patient.cond_kidneyDisease || false,
+        cond_heartSurgery: patient.cond_heartSurgery || false,
+        cond_heartAttack: patient.cond_heartAttack || false,
+        cond_thyroidProblem: patient.cond_thyroidProblem || false,
+        cond_diabetes: patient.cond_diabetes || false,
+        cond_chestPain: patient.cond_chestPain || false,
+        cond_stroke: patient.cond_stroke || false,
+        cond_others: patient.cond_others || false,
+        cond_others_details: patient.cond_others_details || "",
+        reasonForVisit: patient.reasonForVisit || "",
       });
     }
   }, [patient, form, isOpen]);
 
   if (!patient) return null;
 
-  // data is PatientFormData
   function onSubmit(data: PatientFormData) {
     try {
-      // Construct the full Patient object to send to onSave
       const constructedFullName = `${data.firstName} ${data.middleName ? data.middleName + ' ' : ''}${data.lastName}`.trim();
-      const patientToSave: Patient = {
-        ...patient, // Includes id, submissionDate, etc.
-        ...data,    // Includes form fields like firstName, lastName, medicalHistory etc.
-        fullName: constructedFullName, // Set the newly constructed fullName
-      };
       
+      // Ensure dateOfBirth is a valid "YYYY-MM-DD" string from the form data
+      const dobToSave = data.dateOfBirth && isValid(new Date(data.dateOfBirth)) 
+                      ? new Date(data.dateOfBirth).toISOString().split('T')[0] 
+                      : ""; // Fallback to empty string if somehow invalid, though schema should prevent
+
+      const patientToSave: Patient = {
+        ...patient,
+        ...data,
+        fullName: constructedFullName,
+        submissionDate: patient.submissionDate, // Preserve original submissionDate
+        dateOfBirth: dobToSave,
+        effectiveDate: data.effectiveDate && isValid(new Date(data.effectiveDate)) ? new Date(data.effectiveDate).toISOString().split('T')[0] : null,
+        lastDentalVisit: data.lastDentalVisit && isValid(new Date(data.lastDentalVisit)) ? new Date(data.lastDentalVisit).toISOString().split('T')[0] : null,
+      };
+
       onSave(patientToSave);
       toast({
         title: "Patient Data Updated",
         description: `${patientToSave.fullName}'s information has been successfully updated.`,
       });
-      onOpenChange(false); 
+      onOpenChange(false);
     } catch (error) {
       console.error("Update error:", error);
       toast({
@@ -115,264 +246,142 @@ export function EditPatientDialog({ patient, isOpen, onOpenChange, onSave }: Edi
       });
     }
   }
-  
-  const conditionOptions = [
-    { id: "hasHypertension", label: "Hypertension" },
-    { id: "hasDiabetes", label: "Diabetes" },
-    { id: "hasAsthma", label: "Asthma" },
-    { id: "hasOtherConditions", label: "Other" },
+
+  const conditionChecklistItems = [
+    { id: "cond_highBloodPressure", label: "High Blood Pressure" }, { id: "cond_heartDisease", label: "Heart Disease" },
+    { id: "cond_cancerTumors", label: "Cancer/Tumors" }, { id: "cond_lowBloodPressure", label: "Low Blood Pressure" },
+    { id: "cond_heartMurmur", label: "Heart Murmur" }, { id: "cond_anemia", label: "Anemia" },
+    { id: "cond_epilepsyConvulsions", label: "Epilepsy/Convulsions" }, { id: "cond_hepatitisLiverDisease", label: "Hepatitis/Liver Disease" },
+    { id: "cond_angina", label: "Angina" }, { id: "cond_aidsHiv", label: "AIDS/HIV Infection" },
+    { id: "cond_rheumaticFever", label: "Rheumatic Fever" }, { id: "cond_asthma", label: "Asthma" },
+    { id: "cond_std", label: "Sexually Transmitted Disease" }, { id: "cond_hayFeverAllergies", label: "Hay Fever/Allergies" },
+    { id: "cond_emphysema", label: "Emphysema" }, { id: "cond_stomachTroublesUlcers", label: "Stomach Troubles/Ulcers" },
+    { id: "cond_respiratoryProblems", label: "Respiratory Problems" }, { id: "cond_bleedingProblems", label: "Bleeding Problems" },
+    { id: "cond_faintingSeizure", label: "Fainting/Seizure" }, { id: "cond_hepatitisJaundice", label: "Hepatitis/Jaundice" },
+    { id: "cond_bloodDisease", label: "Blood Disease" }, { id: "cond_rapidWeightLoss", label: "Rapid Weight Loss" },
+    { id: "cond_tuberculosis", label: "Tuberculosis" }, { id: "cond_heartInjuries", label: "Heart Injuries" },
+    { id: "cond_radiationTherapy", label: "Radiation Therapy" }, { id: "cond_swollenAnkles", label: "Swollen Ankles" },
+    { id: "cond_arthritisRheumatism", label: "Arthritis/Rheumatism" }, { id: "cond_jointReplacementImplant", label: "Joint Replacement/Implant" },
+    { id: "cond_kidneyDisease", label: "Kidney Disease" }, { id: "cond_heartSurgery", label: "Heart Surgery" },
+    { id: "cond_heartAttack", label: "Heart Attack" }, { id: "cond_thyroidProblem", label: "Thyroid Problem" },
+    { id: "cond_diabetes", label: "Diabetes" }, { id: "cond_chestPain", label: "Chest Pain" },
+    { id: "cond_stroke", label: "Stroke" }, { id: "cond_others", label: "Others (please specify)" }
   ] as const;
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-3xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Edit Patient: {patient.fullName}</DialogTitle>
-          <DialogDescription>Modify the patient's medical information below.</DialogDescription>
+          <DialogDescription>Modify the patient's medical information below. All fields marked with * are required.</DialogDescription>
         </DialogHeader>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 px-1 py-2">
-            <div className="grid grid-cols-1 gap-x-6 gap-y-4 sm:grid-cols-6">
-              <div className="sm:col-span-3">
-                <FormField
-                  control={form.control}
-                  name="firstName"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>First Name</FormLabel>
-                      <FormControl><Input {...field} /></FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-              <div className="sm:col-span-3">
-                <FormField
-                  control={form.control}
-                  name="lastName"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Last Name</FormLabel>
-                      <FormControl><Input {...field} /></FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-              <div className="sm:col-span-full">
-                <FormField
-                  control={form.control}
-                  name="middleName"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Middle Name (Optional)</FormLabel>
-                      <FormControl><Input {...field} value={field.value || ""} /></FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8 px-1 py-2">
+            <SectionTitle title="Patient Information Record" />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <FormField control={form.control} name="firstName" render={({ field }) => ( <FormItem> <FormLabel>First Name *</FormLabel> <FormControl><Input {...field} /></FormControl> <FormMessage /> </FormItem> )} />
+              <FormField control={form.control} name="lastName" render={({ field }) => ( <FormItem> <FormLabel>Last Name *</FormLabel> <FormControl><Input {...field} /></FormControl> <FormMessage /> </FormItem> )} />
+              <FormField control={form.control} name="middleName" render={({ field }) => ( <FormItem> <FormLabel>Middle Name</FormLabel> <FormControl><Input {...field} value={field.value || ""} /></FormControl> <FormMessage /> </FormItem> )} />
+              <FormField control={form.control} name="dateOfBirth" render={({ field }) => ( <FormItem className="flex flex-col"> <FormLabel>Date of Birth *</FormLabel> <Popover> <PopoverTrigger asChild> <FormControl> <Button variant={"outline"} className={cn("w-full pl-3 text-left font-normal", !field.value && "text-muted-foreground")}> {field.value && isValid(new Date(field.value)) ? format(new Date(field.value), "PPP") : <span>Pick a date</span>} <CalendarIcon className="ml-auto h-4 w-4 opacity-50" /> </Button> </FormControl> </PopoverTrigger> <PopoverContent className="w-auto p-0" align="start"> <Calendar mode="single" selected={field.value && isValid(new Date(field.value)) ? new Date(field.value) : undefined} onSelect={(date) => field.onChange(date ? date.toISOString().split('T')[0] : '')} disabled={(date) => date > new Date() || date < new Date("1900-01-01")} initialFocus /> </PopoverContent> </Popover> <FormMessage /> </FormItem> )} />
+              <FormField control={form.control} name="gender" render={({ field }) => ( <FormItem> <FormLabel>Gender *</FormLabel> <Select onValueChange={field.onChange} value={field.value}> <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl> <SelectContent> <SelectItem value="male">Male</SelectItem> <SelectItem value="female">Female</SelectItem> <SelectItem value="other">Other</SelectItem> <SelectItem value="prefer_not_to_say">Prefer not to say</SelectItem> </SelectContent> </Select> <FormMessage /> </FormItem> )} />
+              <FormField control={form.control} name="mobileNo" render={({ field }) => ( <FormItem> <FormLabel>Mobile No. *</FormLabel> <FormControl><Input type="tel" {...field} /></FormControl> <FormMessage /> </FormItem> )} />
+              <FormField control={form.control} name="email" render={({ field }) => ( <FormItem> <FormLabel>Email Address *</FormLabel> <FormControl><Input type="email" {...field} /></FormControl> <FormMessage /> </FormItem> )} />
+              <FormField control={form.control} name="address" render={({ field }) => ( <FormItem className="md:col-span-2"> <FormLabel>Address *</FormLabel> <FormControl><Textarea {...field} /></FormControl> <FormMessage /> </FormItem> )} />
+              <FormField control={form.control} name="religion" render={({ field }) => ( <FormItem> <FormLabel>Religion</FormLabel> <FormControl><Input {...field} value={field.value || ""} /></FormControl> <FormMessage /> </FormItem> )} />
+              <FormField control={form.control} name="nationality" render={({ field }) => ( <FormItem> <FormLabel>Nationality</FormLabel> <FormControl><Input {...field} value={field.value || ""} /></FormControl> <FormMessage /> </FormItem> )} />
+              <FormField control={form.control} name="homeNo" render={({ field }) => ( <FormItem> <FormLabel>Home No.</FormLabel> <FormControl><Input type="tel" {...field} value={field.value || ""} /></FormControl> <FormMessage /> </FormItem> )} />
+              <FormField control={form.control} name="occupation" render={({ field }) => ( <FormItem> <FormLabel>Occupation</FormLabel> <FormControl><Input {...field} value={field.value || ""} /></FormControl> <FormMessage /> </FormItem> )} />
+              <FormField control={form.control} name="officeNo" render={({ field }) => ( <FormItem> <FormLabel>Office No.</FormLabel> <FormControl><Input type="tel" {...field} value={field.value || ""} /></FormControl> <FormMessage /> </FormItem> )} />
+              <FormField control={form.control} name="dentalInsurance" render={({ field }) => ( <FormItem> <FormLabel>Dental Insurance</FormLabel> <FormControl><Input {...field} value={field.value || ""} /></FormControl> <FormMessage /> </FormItem> )} />
+              <FormField control={form.control} name="faxNo" render={({ field }) => ( <FormItem> <FormLabel>Fax No.</FormLabel> <FormControl><Input type="tel" {...field} value={field.value || ""} /></FormControl> <FormMessage /> </FormItem> )} />
+              <FormField control={form.control} name="effectiveDate" render={({ field }) => ( <FormItem className="flex flex-col"> <FormLabel>Effective Date (Insurance)</FormLabel> <Popover> <PopoverTrigger asChild> <FormControl> <Button variant={"outline"} className={cn("w-full pl-3 text-left font-normal", !field.value && "text-muted-foreground")}> {field.value && isValid(new Date(field.value)) ? format(new Date(field.value), "PPP") : <span>Pick a date</span>} <CalendarIcon className="ml-auto h-4 w-4 opacity-50" /> </Button> </FormControl> </PopoverTrigger> <PopoverContent className="w-auto p-0" align="start"> <Calendar mode="single" selected={field.value && isValid(new Date(field.value)) ? new Date(field.value) : undefined} onSelect={(date) => field.onChange(date ? date.toISOString().split('T')[0] : '')} initialFocus /> </PopoverContent> </Popover> <FormMessage /> </FormItem> )} />
+              <FormField control={form.control} name="referredBy" render={({ field }) => ( <FormItem className="md:col-span-2"> <FormLabel>Whom may we thank for referring you?</FormLabel> <FormControl><Input {...field} value={field.value || ""} /></FormControl> <FormMessage /> </FormItem> )} />
             </div>
 
-             <FormField
-              control={form.control}
-              name="dateOfBirth"
-              render={({ field }) => (
-                <FormItem className="flex flex-col">
-                  <FormLabel>Date of Birth</FormLabel>
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <FormControl>
-                        <Button
-                          variant={"outline"}
-                          className={cn(
-                            "w-full pl-3 text-left font-normal",
-                            !field.value && "text-muted-foreground"
-                          )}
-                        >
-                          {field.value ? (
-                            format(new Date(field.value), "PPP")
-                          ) : (
-                            <span>Pick a date</span>
-                          )}
-                          <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                        </Button>
-                      </FormControl>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="start">
-                      <Calendar
-                        mode="single"
-                        selected={field.value ? new Date(field.value) : undefined}
-                        onSelect={(date) => field.onChange(date ? date.toISOString().split('T')[0] : '')}
-                        disabled={(date) =>
-                          date > new Date() || date < new Date("1900-01-01")
-                        }
-                        initialFocus
-                      />
-                    </PopoverContent>
-                  </Popover>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="gender"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Gender</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value}>
-                    <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
-                    <SelectContent>
-                      <SelectItem value="male">Male</SelectItem>
-                      <SelectItem value="female">Female</SelectItem>
-                      <SelectItem value="other">Other</SelectItem>
-                      <SelectItem value="prefer_not_to_say">Prefer not to say</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="contactNumber"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Contact Number</FormLabel>
-                  <FormControl><Input type="tel" {...field} /></FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="email"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Email Address</FormLabel>
-                  <FormControl><Input type="email" {...field} /></FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="address"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Address</FormLabel>
-                  <FormControl><Textarea {...field} /></FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="medicalHistory"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Medical History</FormLabel>
-                   <FormDescription>
-                    Allergies, chronic conditions, past surgeries, etc. (excluding conditions selected below).
-                  </FormDescription>
-                  <FormControl><Textarea {...field} /></FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+            {isMinor && (
+              <>
+                <SubSectionTitle title="Parent/Guardian Information (for Minors)" />
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <FormField control={form.control} name="parentOrGuardianName" render={({ field }) => ( <FormItem> <FormLabel>Parent/Guardian's Name</FormLabel> <FormControl><Input {...field} value={field.value || ""} /></FormControl> <FormMessage /> </FormItem> )} />
+                  <FormField control={form.control} name="guardianEmail" render={({ field }) => ( <FormItem> <FormLabel>Parent/Guardian's Email</FormLabel> <FormControl><Input type="email" {...field} value={field.value || ""} /></FormControl> <FormMessage /> </FormItem> )} />
+                  <FormField control={form.control} name="parentOrGuardianOccupation" render={({ field }) => ( <FormItem className="md:col-span-2"> <FormLabel>Parent/Guardian's Occupation</FormLabel> <FormControl><Input {...field} value={field.value || ""} /></FormControl> <FormMessage /> </FormItem> )} />
+                </div>
+              </>
+            )}
 
-            <DialogTitle className="text-lg pt-3 border-t">Pre-existing Conditions</DialogTitle>
-             <FormDescription>Please select any conditions that apply.</FormDescription>
+            <SectionTitle title="Dental History" />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <FormField control={form.control} name="previousDentist" render={({ field }) => ( <FormItem> <FormLabel>Previous Dentist (Dr.)</FormLabel> <FormControl><Input {...field} value={field.value || ""} /></FormControl> <FormMessage /> </FormItem> )} />
+              <FormField control={form.control} name="lastDentalVisit" render={({ field }) => ( <FormItem className="flex flex-col"> <FormLabel>Last Dental Visit</FormLabel> <Popover> <PopoverTrigger asChild> <FormControl> <Button variant={"outline"} className={cn("w-full pl-3 text-left font-normal", !field.value && "text-muted-foreground")}> {field.value && isValid(new Date(field.value)) ? format(new Date(field.value), "PPP") : <span>Pick a date</span>} <CalendarIcon className="ml-auto h-4 w-4 opacity-50" /> </Button> </FormControl> </PopoverTrigger> <PopoverContent className="w-auto p-0" align="start"> <Calendar mode="single" selected={field.value && isValid(new Date(field.value)) ? new Date(field.value) : undefined} onSelect={(date) => field.onChange(date ? date.toISOString().split('T')[0] : '')} initialFocus /> </PopoverContent> </Popover> <FormMessage /> </FormItem> )} />
+            </div>
+
+            <SectionTitle title="Medical History" />
+            <SubSectionTitle title="Physician Information" />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <FormField control={form.control} name="physicianName" render={({ field }) => ( <FormItem> <FormLabel>Name of Physician (Dr.)</FormLabel> <FormControl><Input {...field} value={field.value || ""} /></FormControl> <FormMessage /> </FormItem> )} />
+              <FormField control={form.control} name="physicianSpecialty" render={({ field }) => ( <FormItem> <FormLabel>Physician's Specialty</FormLabel> <FormControl><Input {...field} value={field.value || ""} /></FormControl> <FormMessage /> </FormItem> )} />
+              <FormField control={form.control} name="physicianOfficeAddress" render={({ field }) => ( <FormItem> <FormLabel>Physician's Office Address</FormLabel> <FormControl><Textarea {...field} value={field.value || ""} /></FormControl> <FormMessage /> </FormItem> )} />
+              <FormField control={form.control} name="physicianOfficeNumber" render={({ field }) => ( <FormItem> <FormLabel>Physician's Office Number</FormLabel> <FormControl><Input type="tel" {...field} value={field.value || ""} /></FormControl> <FormMessage /> </FormItem> )} />
+            </div>
+
+            <SubSectionTitle title="Health Questions" />
+            <FormField control={form.control} name="q_goodHealth" render={({ field }) => ( <FormItem className="flex flex-row items-center space-x-3 space-y-0 p-3 border rounded-md"> <FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl> <FormLabel className="font-normal">Are you in good health?</FormLabel> </FormItem> )} />
+            <FormField control={form.control} name="q_medicalTreatmentNow" render={({ field }) => ( <FormItem className="flex flex-row items-center space-x-3 space-y-0 p-3 border rounded-md"> <FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl> <FormLabel className="font-normal">Are you under medical treatment now?</FormLabel> </FormItem> )} />
+            {watchMedicalTreatmentNow && <FormField control={form.control} name="q_medicalTreatmentCondition" render={({ field }) => ( <FormItem> <FormLabel>If so, what is the condition being treated?</FormLabel> <FormControl><Textarea {...field} value={field.value || ""} /></FormControl> <FormMessage /> </FormItem> )} />}
+            <FormField control={form.control} name="q_seriousIllnessOperation" render={({ field }) => ( <FormItem className="flex flex-row items-center space-x-3 space-y-0 p-3 border rounded-md"> <FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl> <FormLabel className="font-normal">Have you ever had serious illness or surgical operation?</FormLabel> </FormItem> )} />
+            {watchSeriousIllnessOperation && <FormField control={form.control} name="q_seriousIllnessOperationDetails" render={({ field }) => ( <FormItem> <FormLabel>If so, what illness or surgical operation?</FormLabel> <FormControl><Textarea {...field} value={field.value || ""} /></FormControl> <FormMessage /> </FormItem> )} />}
+            <FormField control={form.control} name="q_hospitalized" render={({ field }) => ( <FormItem className="flex flex-row items-center space-x-3 space-y-0 p-3 border rounded-md"> <FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl> <FormLabel className="font-normal">Have you ever been hospitalized?</FormLabel> </FormItem> )} />
+            {watchHospitalized && <FormField control={form.control} name="q_hospitalizedDetails" render={({ field }) => ( <FormItem> <FormLabel>If so, when and why?</FormLabel> <FormControl><Textarea {...field} value={field.value || ""} /></FormControl> <FormMessage /> </FormItem> )} />}
+            <FormField control={form.control} name="q_takingMedication" render={({ field }) => ( <FormItem className="flex flex-row items-center space-x-3 space-y-0 p-3 border rounded-md"> <FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl> <FormLabel className="font-normal">Are you taking any prescription / non-prescription medication?</FormLabel> </FormItem> )} />
+            {watchTakingMedication && <FormField control={form.control} name="q_medicationDetails" render={({ field }) => ( <FormItem> <FormLabel>If so, please specify.</FormLabel> <FormControl><Textarea placeholder="List medications and dosages" {...field} value={field.value || ""} /></FormControl> <FormMessage /> </FormItem> )} />}
+            <FormField control={form.control} name="q_useTobacco" render={({ field }) => ( <FormItem className="flex flex-row items-center space-x-3 space-y-0 p-3 border rounded-md"> <FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl> <FormLabel className="font-normal">Do you use tobacco products?</FormLabel> </FormItem> )} />
+            <FormField control={form.control} name="q_useDrugs" render={({ field }) => ( <FormItem className="flex flex-row items-center space-x-3 space-y-0 p-3 border rounded-md"> <FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl> <FormLabel className="font-normal">Do you use alcohol, cocaine, or other dangerous drugs?</FormLabel> </FormItem> )} />
+
+            <SubSectionTitle title="Allergies" />
+            <FormDescription>Are you allergic to any of the following:</FormDescription>
             <div className="space-y-2">
-              {conditionOptions.map((option) => (
+              <FormField control={form.control} name="allergy_localAnaesthetic" render={({ field }) => ( <FormItem className="flex flex-row items-center space-x-3 space-y-0 p-2 border rounded-md"> <FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl> <FormLabel className="font-normal">Local Anaesthetic (e.g., Lidocaine)</FormLabel> </FormItem> )} />
+              <FormField control={form.control} name="allergy_penicillin" render={({ field }) => ( <FormItem className="flex flex-row items-center space-x-3 space-y-0 p-2 border rounded-md"> <FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl> <FormLabel className="font-normal">Penicillin/Antibiotics</FormLabel> </FormItem> )} />
+              <FormField control={form.control} name="allergy_aspirin" render={({ field }) => ( <FormItem className="flex flex-row items-center space-x-3 space-y-0 p-2 border rounded-md"> <FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl> <FormLabel className="font-normal">Aspirin</FormLabel> </FormItem> )} />
+              <FormField control={form.control} name="allergy_latex" render={({ field }) => ( <FormItem className="flex flex-row items-center space-x-3 space-y-0 p-2 border rounded-md"> <FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl> <FormLabel className="font-normal">Latex</FormLabel> </FormItem> )} />
+              <FormField control={form.control} name="allergy_other" render={({ field }) => ( <FormItem className="flex flex-row items-center space-x-3 space-y-0 p-2 border rounded-md"> <FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl> <FormLabel className="font-normal">Other</FormLabel> </FormItem> )} />
+              {watchAllergyOther && <FormField control={form.control} name="allergy_other_details" render={({ field }) => ( <FormItem> <FormLabel>Please specify other allergies:</FormLabel> <FormControl><Textarea {...field} value={field.value || ""} /></FormControl> <FormMessage /> </FormItem> )} />}
+            </div>
+
+            <SubSectionTitle title="Additional Medical Information" />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <FormField control={form.control} name="bleedingTime" render={({ field }) => ( <FormItem> <FormLabel>Bleeding Time</FormLabel> <FormControl><Input placeholder="e.g., Normal, Prolonged" {...field} value={field.value || ""} /></FormControl> <FormMessage /> </FormItem> )} />
+              <FormField control={form.control} name="bloodType" render={({ field }) => ( <FormItem> <FormLabel>Blood Type</FormLabel> <FormControl><Input placeholder="e.g., A+, O-" {...field} value={field.value || ""} /></FormControl> <FormMessage /> </FormItem> )} />
+              <FormField control={form.control} name="bloodPressure" render={({ field }) => ( <FormItem> <FormLabel>Blood Pressure</FormLabel> <FormControl><Input placeholder="e.g., 120/80" {...field} value={field.value || ""} /></FormControl> <FormMessage /> </FormItem> )} />
+            </div>
+
+            <SubSectionTitle title="For Female Patients" />
+            <FormField control={form.control} name="q_isPregnant" render={({ field }) => ( <FormItem className="flex flex-row items-center space-x-3 space-y-0 p-3 border rounded-md"> <FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl> <FormLabel className="font-normal">Are you pregnant?</FormLabel> </FormItem> )} />
+            <FormField control={form.control} name="q_isNursing" render={({ field }) => ( <FormItem className="flex flex-row items-center space-x-3 space-y-0 p-3 border rounded-md"> <FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl> <FormLabel className="font-normal">Are you nursing?</FormLabel> </FormItem> )} />
+            <FormField control={form.control} name="q_onBirthControl" render={({ field }) => ( <FormItem className="flex flex-row items-center space-x-3 space-y-0 p-3 border rounded-md"> <FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl> <FormLabel className="font-normal">Are you taking birth control pills?</FormLabel> </FormItem> )} />
+
+            <SubSectionTitle title="Conditions Checklist" />
+            <FormDescription>Do you have or have you had any of the following? Check which apply.</FormDescription>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-3">
+              {conditionChecklistItems.map((item) => (
                 <FormField
-                  key={option.id}
+                  key={item.id}
                   control={form.control}
-                  name={option.id}
+                  name={item.id}
                   render={({ field }) => (
-                    <FormItem className="flex flex-row items-center space-x-3 space-y-0 p-3 border rounded-md shadow-sm hover:bg-accent hover:text-accent-foreground transition-colors">
-                       <FormControl>
-                        <Checkbox
-                          checked={field.value}
-                          onCheckedChange={field.onChange}
-                          id={`edit-${option.id}`}
-                        />
-                      </FormControl>
-                      <FormLabel htmlFor={`edit-${option.id}`} className="font-normal cursor-pointer flex-grow">
-                        {option.label}
-                      </FormLabel>
+                    <FormItem className="flex flex-row items-center space-x-3 space-y-0 p-2 border rounded-md">
+                      <FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} id={`edit-${item.id}`} /></FormControl>
+                      <FormLabel htmlFor={`edit-${item.id}`} className="font-normal cursor-pointer flex-grow">{item.label}</FormLabel>
                     </FormItem>
                   )}
                 />
               ))}
             </div>
+            {watchCondOthers && <FormField control={form.control} name="cond_others_details" render={({ field }) => ( <FormItem> <FormLabel>Please specify other conditions:</FormLabel> <FormControl><Textarea {...field} value={field.value || ""} /></FormControl> <FormMessage /> </FormItem> )} />}
 
-            {watchHasOtherConditions && (
-              <FormField
-                control={form.control}
-                name="otherConditions"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Please specify other conditions</FormLabel>
-                    <FormControl>
-                      <Textarea 
-                        placeholder="List other conditions here" 
-                        {...field} 
-                        value={field.value || ""}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            )}
+            <Separator className="my-8" />
+            <FormField control={form.control} name="reasonForVisit" render={({ field }) => ( <FormItem> <FormLabel>Primary Reason for This Visit / Chief Complaint *</FormLabel> <FormControl><Textarea placeholder="e.g., Routine check-up, toothache, etc." {...field} /></FormControl> <FormMessage /> </FormItem> )} />
 
-            <FormField
-              control={form.control}
-              name="currentMedications"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Current Medications (Optional)</FormLabel>
-                  <FormControl><Textarea {...field} value={field.value || ""} /></FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="symptoms"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Current Symptoms</FormLabel>
-                  <FormControl><Textarea {...field} /></FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <DialogTitle className="text-lg pt-3 border-t">Insurance Information (Optional)</DialogTitle>
-            <FormField
-              control={form.control}
-              name="insuranceProvider"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Insurance Provider (Optional)</FormLabel>
-                  <FormControl><Input {...field} value={field.value || ""} /></FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="insurancePolicyNumber"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Policy Number (Optional)</FormLabel>
-                  <FormControl><Input {...field} value={field.value || ""} /></FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
             <DialogFooter className="pt-4">
               <DialogClose asChild>
                 <Button type="button" variant="outline">
