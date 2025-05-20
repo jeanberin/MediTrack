@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Calendar } from "@/components/ui/calendar";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Select,
   SelectContent,
@@ -52,10 +53,17 @@ export function PatientForm() {
       medicalHistory: "",
       currentMedications: "",
       symptoms: "",
+      hasHypertension: false,
+      hasDiabetes: false,
+      hasAsthma: false,
+      hasOtherConditions: false,
+      otherConditions: "",
       insuranceProvider: "",
       insurancePolicyNumber: "",
     },
   });
+
+  const watchHasOtherConditions = form.watch("hasOtherConditions");
 
   function onSubmit(data: PatientFormData) {
     try {
@@ -74,6 +82,13 @@ export function PatientForm() {
       });
     }
   }
+
+  const conditionOptions = [
+    { id: "hasHypertension", label: "Hypertension" },
+    { id: "hasDiabetes", label: "Diabetes" },
+    { id: "hasAsthma", label: "Asthma" },
+    { id: "hasOtherConditions", label: "Other" },
+  ] as const;
 
   return (
     <Card className="w-full max-w-2xl mx-auto shadow-lg">
@@ -213,15 +228,62 @@ export function PatientForm() {
                 <FormItem>
                   <FormLabel>Medical History</FormLabel>
                   <FormDescription>
-                    Please list any allergies, chronic conditions, past surgeries, etc.
+                    Please list any allergies, chronic conditions, past surgeries, etc. (excluding conditions selected below).
                   </FormDescription>
                   <FormControl>
-                    <Textarea placeholder="e.g., Allergy to Penicillin, Asthma" {...field} />
+                    <Textarea placeholder="e.g., Allergy to Penicillin" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
+            
+            <CardTitle className="text-lg pt-4 border-t">Pre-existing Conditions</CardTitle>
+            <FormDescription>Please select any conditions that apply to you.</FormDescription>
+            <div className="space-y-3">
+              {conditionOptions.map((option) => (
+                <FormField
+                  key={option.id}
+                  control={form.control}
+                  name={option.id}
+                  render={({ field }) => (
+                    <FormItem className="flex flex-row items-center space-x-3 space-y-0 p-3 border rounded-md shadow-sm hover:bg-accent hover:text-accent-foreground transition-colors">
+                      <FormControl>
+                        <Checkbox
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                          id={option.id}
+                        />
+                      </FormControl>
+                      <FormLabel htmlFor={option.id} className="font-normal cursor-pointer flex-grow">
+                        {option.label}
+                      </FormLabel>
+                    </FormItem>
+                  )}
+                />
+              ))}
+            </div>
+
+            {watchHasOtherConditions && (
+              <FormField
+                control={form.control}
+                name="otherConditions"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Please specify other conditions</FormLabel>
+                    <FormControl>
+                      <Textarea 
+                        placeholder="List other conditions here" 
+                        {...field} 
+                        value={field.value || ""} // Ensure value is not undefined
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
+
 
             <FormField
               control={form.control}
@@ -233,7 +295,11 @@ export function PatientForm() {
                     Include dosage and frequency if known.
                   </FormDescription>
                   <FormControl>
-                    <Textarea placeholder="e.g., Lisinopril 10mg daily" {...field} />
+                    <Textarea 
+                      placeholder="e.g., Lisinopril 10mg daily" 
+                      {...field} 
+                      value={field.value || ""} // Ensure value is not undefined
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -265,7 +331,11 @@ export function PatientForm() {
                 <FormItem>
                   <FormLabel>Insurance Provider</FormLabel>
                   <FormControl>
-                    <Input placeholder="e.g., Blue Cross Blue Shield" {...field} />
+                    <Input 
+                      placeholder="e.g., Blue Cross Blue Shield" 
+                      {...field} 
+                      value={field.value || ""} // Ensure value is not undefined
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -278,7 +348,11 @@ export function PatientForm() {
                 <FormItem>
                   <FormLabel>Policy Number</FormLabel>
                   <FormControl>
-                    <Input placeholder="e.g., XZY123456789" {...field} />
+                    <Input 
+                      placeholder="e.g., XZY123456789" 
+                      {...field} 
+                      value={field.value || ""} // Ensure value is not undefined
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>

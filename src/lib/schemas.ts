@@ -11,6 +11,14 @@ export const patientFormSchema = z.object({
   medicalHistory: z.string().min(1, { message: "Medical history cannot be empty." }).max(1000),
   currentMedications: z.string().max(1000).optional(),
   symptoms: z.string().min(1, { message: "Symptoms cannot be empty." }).max(1000),
+  
+  // Pre-existing conditions
+  hasHypertension: z.boolean().optional().default(false),
+  hasDiabetes: z.boolean().optional().default(false),
+  hasAsthma: z.boolean().optional().default(false),
+  hasOtherConditions: z.boolean().optional().default(false),
+  otherConditions: z.string().max(200).optional(),
+
   insuranceProvider: z.string().max(100).optional(),
   insurancePolicyNumber: z.string().max(100).optional(),
 });

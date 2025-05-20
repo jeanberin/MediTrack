@@ -10,6 +10,11 @@ export interface Patient {
   medicalHistory: string;
   currentMedications: string;
   symptoms: string;
+  hasHypertension?: boolean;
+  hasDiabetes?: boolean;
+  hasAsthma?: boolean;
+  hasOtherConditions?: boolean;
+  otherConditions?: string;
   insuranceProvider?: string;
   insurancePolicyNumber?: string;
   submissionDate: string;

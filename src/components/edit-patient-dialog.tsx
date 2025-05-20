@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Calendar } from "@/components/ui/calendar";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Select,
   SelectContent,
@@ -58,8 +59,10 @@ export function EditPatientDialog({ patient, isOpen, onOpenChange, onSave }: Edi
     resolver: zodResolver(patientFormSchema),
   });
 
+  const watchHasOtherConditions = form.watch("hasOtherConditions");
+
   useEffect(() => {
-    if (patient) {
+    if (patient && isOpen) { // Also check isOpen to re-initialize if dialog is reopened with same patient
       form.reset({
         fullName: patient.fullName,
         dateOfBirth: patient.dateOfBirth,
@@ -70,26 +73,31 @@ export function EditPatientDialog({ patient, isOpen, onOpenChange, onSave }: Edi
         medicalHistory: patient.medicalHistory,
         currentMedications: patient.currentMedications || "",
         symptoms: patient.symptoms,
+        hasHypertension: patient.hasHypertension || false,
+        hasDiabetes: patient.hasDiabetes || false,
+        hasAsthma: patient.hasAsthma || false,
+        hasOtherConditions: patient.hasOtherConditions || false,
+        otherConditions: patient.otherConditions || "",
         insuranceProvider: patient.insuranceProvider || "",
         insurancePolicyNumber: patient.insurancePolicyNumber || "",
       });
     }
-  }, [patient, form, isOpen]); // re-initialize form when patient or isOpen changes
+  }, [patient, form, isOpen]);
 
   if (!patient) return null;
 
   function onSubmit(data: PatientFormData) {
     try {
       const updatedPatient: Patient = {
-        ...patient, // Retain ID and submissionDate
-        ...data,   // Apply updated form fields
+        ...patient, 
+        ...data,   
       };
       onSave(updatedPatient);
       toast({
         title: "Patient Data Updated",
         description: `${patient.fullName}'s information has been successfully updated.`,
       });
-      onOpenChange(false); // Close dialog on successful save
+      onOpenChange(false); 
     } catch (error) {
       console.error("Update error:", error);
       toast({
@@ -99,6 +107,13 @@ export function EditPatientDialog({ patient, isOpen, onOpenChange, onSave }: Edi
       });
     }
   }
+  
+  const conditionOptions = [
+    { id: "hasHypertension", label: "Hypertension" },
+    { id: "hasDiabetes", label: "Diabetes" },
+    { id: "hasAsthma", label: "Asthma" },
+    { id: "hasOtherConditions", label: "Other" },
+  ] as const;
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
@@ -109,7 +124,6 @@ export function EditPatientDialog({ patient, isOpen, onOpenChange, onSave }: Edi
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 px-1 py-2">
-            {/* Form fields are similar to PatientForm, reusing structure */}
             <FormField
               control={form.control}
               name="fullName"
@@ -220,18 +234,68 @@ export function EditPatientDialog({ patient, isOpen, onOpenChange, onSave }: Edi
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Medical History</FormLabel>
+                   <FormDescription>
+                    Allergies, chronic conditions, past surgeries, etc. (excluding conditions selected below).
+                  </FormDescription>
                   <FormControl><Textarea {...field} /></FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
+
+            <DialogTitle className="text-lg pt-3 border-t">Pre-existing Conditions</DialogTitle>
+             <FormDescription>Please select any conditions that apply.</FormDescription>
+            <div className="space-y-2">
+              {conditionOptions.map((option) => (
+                <FormField
+                  key={option.id}
+                  control={form.control}
+                  name={option.id}
+                  render={({ field }) => (
+                    <FormItem className="flex flex-row items-center space-x-3 space-y-0 p-3 border rounded-md shadow-sm hover:bg-accent hover:text-accent-foreground transition-colors">
+                       <FormControl>
+                        <Checkbox
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                          id={`edit-${option.id}`}
+                        />
+                      </FormControl>
+                      <FormLabel htmlFor={`edit-${option.id}`} className="font-normal cursor-pointer flex-grow">
+                        {option.label}
+                      </FormLabel>
+                    </FormItem>
+                  )}
+                />
+              ))}
+            </div>
+
+            {watchHasOtherConditions && (
+              <FormField
+                control={form.control}
+                name="otherConditions"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Please specify other conditions</FormLabel>
+                    <FormControl>
+                      <Textarea 
+                        placeholder="List other conditions here" 
+                        {...field} 
+                        value={field.value || ""}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
+
             <FormField
               control={form.control}
               name="currentMedications"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Current Medications (Optional)</FormLabel>
-                  <FormControl><Textarea {...field} /></FormControl>
+                  <FormControl><Textarea {...field} value={field.value || ""} /></FormControl>
                   <FormMessage />
                 </FormItem>
               )}
@@ -247,13 +311,14 @@ export function EditPatientDialog({ patient, isOpen, onOpenChange, onSave }: Edi
                 </FormItem>
               )}
             />
+            <DialogTitle className="text-lg pt-3 border-t">Insurance Information (Optional)</DialogTitle>
             <FormField
               control={form.control}
               name="insuranceProvider"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Insurance Provider (Optional)</FormLabel>
-                  <FormControl><Input {...field} /></FormControl>
+                  <FormControl><Input {...field} value={field.value || ""} /></FormControl>
                   <FormMessage />
                 </FormItem>
               )}
@@ -264,7 +329,7 @@ export function EditPatientDialog({ patient, isOpen, onOpenChange, onSave }: Edi
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Policy Number (Optional)</FormLabel>
-                  <FormControl><Input {...field} /></FormControl>
+                  <FormControl><Input {...field} value={field.value || ""} /></FormControl>
                   <FormMessage />
                 </FormItem>
               )}
