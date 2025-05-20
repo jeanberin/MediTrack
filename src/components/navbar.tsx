@@ -1,13 +1,15 @@
 
 "use client";
 import Link from 'next/link';
-import { useAuth } from '@/hooks/use-auth';
+import { useAuth } from '@/hooks/use-auth.tsx';
 import { Button } from '@/components/ui/button';
-import { Stethoscope, LogOut, LogIn, Users, LayoutDashboard } from 'lucide-react';
+import { Stethoscope, LogOut, LogIn, Users, LayoutDashboard, Moon, Sun } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useTheme } from '@/hooks/use-theme';
 
 export function Navbar() {
   const { isAuthenticated, logout, isLoading } = useAuth();
+  const { theme, toggleTheme } = useTheme();
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -44,6 +46,9 @@ export function Navbar() {
               </Link>
             </Button>
           )}
+           <Button variant="ghost" size="icon" onClick={toggleTheme} aria-label="Toggle theme">
+            {theme === 'light' ? <Moon className="h-5 w-5" /> : <Sun className="h-5 w-5" />}
+          </Button>
         </nav>
       </div>
     </header>
