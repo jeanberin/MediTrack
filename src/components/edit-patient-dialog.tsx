@@ -106,13 +106,13 @@ export function EditPatientDialog({ patient, isOpen, onOpenChange, onSave }: Edi
 
   useEffect(() => {
     if (patient && isOpen) {
-      const dobForForm = (typeof patient.dateOfBirth === 'string' && patient.dateOfBirth.trim() !== '' && isValid(new Date(patient.dateOfBirth)))
+      const dobForForm = (patient.dateOfBirth && isValid(new Date(patient.dateOfBirth)))
                        ? new Date(patient.dateOfBirth).toISOString().split('T')[0]
                        : "";
-      const effectiveDateForForm = (patient.effectiveDate && typeof patient.effectiveDate === 'string' && patient.effectiveDate.trim() !== '' && isValid(new Date(patient.effectiveDate)))
+      const effectiveDateForForm = (patient.effectiveDate && isValid(new Date(patient.effectiveDate)))
                                  ? new Date(patient.effectiveDate).toISOString().split('T')[0]
                                  : "";
-      const lastDentalVisitForForm = (patient.lastDentalVisit && typeof patient.lastDentalVisit === 'string' && patient.lastDentalVisit.trim() !== '' && isValid(new Date(patient.lastDentalVisit)))
+      const lastDentalVisitForForm = (patient.lastDentalVisit && isValid(new Date(patient.lastDentalVisit)))
                                    ? new Date(patient.lastDentalVisit).toISOString().split('T')[0]
                                    : "";
       const genderForForm = GENDERS.includes(patient.gender as GenderType) ? patient.gender : 'prefer_not_to_say';
@@ -215,17 +215,16 @@ export function EditPatientDialog({ patient, isOpen, onOpenChange, onSave }: Edi
   function onSubmit(data: PatientFormData) {
     try {
       const constructedFullName = `${data.firstName} ${data.middleName ? data.middleName + ' ' : ''}${data.lastName}`.trim();
-      
-      // Ensure dateOfBirth is a valid "YYYY-MM-DD" string from the form data
-      const dobToSave = data.dateOfBirth && isValid(new Date(data.dateOfBirth)) 
-                      ? new Date(data.dateOfBirth).toISOString().split('T')[0] 
-                      : ""; // Fallback to empty string if somehow invalid, though schema should prevent
+
+      const dobToSave = data.dateOfBirth && isValid(new Date(data.dateOfBirth))
+                      ? new Date(data.dateOfBirth).toISOString().split('T')[0]
+                      : ""; 
 
       const patientToSave: Patient = {
         ...patient,
         ...data,
         fullName: constructedFullName,
-        submissionDate: patient.submissionDate, // Preserve original submissionDate
+        submissionDate: patient.submissionDate, 
         dateOfBirth: dobToSave,
         effectiveDate: data.effectiveDate && isValid(new Date(data.effectiveDate)) ? new Date(data.effectiveDate).toISOString().split('T')[0] : null,
         lastDentalVisit: data.lastDentalVisit && isValid(new Date(data.lastDentalVisit)) ? new Date(data.lastDentalVisit).toISOString().split('T')[0] : null,
@@ -282,7 +281,7 @@ export function EditPatientDialog({ patient, isOpen, onOpenChange, onSave }: Edi
               <FormField control={form.control} name="firstName" render={({ field }) => ( <FormItem> <FormLabel>First Name *</FormLabel> <FormControl><Input {...field} /></FormControl> <FormMessage /> </FormItem> )} />
               <FormField control={form.control} name="lastName" render={({ field }) => ( <FormItem> <FormLabel>Last Name *</FormLabel> <FormControl><Input {...field} /></FormControl> <FormMessage /> </FormItem> )} />
               <FormField control={form.control} name="middleName" render={({ field }) => ( <FormItem> <FormLabel>Middle Name</FormLabel> <FormControl><Input {...field} value={field.value || ""} /></FormControl> <FormMessage /> </FormItem> )} />
-              <FormField control={form.control} name="dateOfBirth" render={({ field }) => ( <FormItem className="flex flex-col"> <FormLabel>Date of Birth *</FormLabel> <Popover> <PopoverTrigger asChild> <FormControl> <Button variant={"outline"} className={cn("w-full pl-3 text-left font-normal", !field.value && "text-muted-foreground")}> {field.value && isValid(new Date(field.value)) ? format(new Date(field.value), "PPP") : <span>Pick a date</span>} <CalendarIcon className="ml-auto h-4 w-4 opacity-50" /> </Button> </FormControl> </PopoverTrigger> <PopoverContent className="w-auto p-0" align="start"> <Calendar mode="single" selected={field.value && isValid(new Date(field.value)) ? new Date(field.value) : undefined} onSelect={(date) => field.onChange(date ? date.toISOString().split('T')[0] : '')} disabled={(date) => date > new Date() || date < new Date("1900-01-01")} initialFocus /> </PopoverContent> </Popover> <FormMessage /> </FormItem> )} />
+              <FormField control={form.control} name="dateOfBirth" render={({ field }) => ( <FormItem className="flex flex-col"> <FormLabel>Date of Birth *</FormLabel> <Popover> <FormControl> <PopoverTrigger asChild> <Button variant={"outline"} className={cn("w-full pl-3 text-left font-normal", !field.value && "text-muted-foreground")}> <span className="flex items-center justify-between w-full"> <span> {field.value && isValid(new Date(field.value)) ? format(new Date(field.value), "PPP") : "Pick a date"} </span> <CalendarIcon className="ml-auto h-4 w-4 opacity-50" /> </span> </Button> </PopoverTrigger> </FormControl> <PopoverContent className="w-auto p-0" align="start"> <Calendar mode="single" selected={field.value && isValid(new Date(field.value)) ? new Date(field.value) : undefined} onSelect={(date) => field.onChange(date ? date.toISOString().split('T')[0] : '')} disabled={(date) => date > new Date() || date < new Date("1900-01-01")} initialFocus /> </PopoverContent> </Popover> <FormMessage /> </FormItem> )} />
               <FormField control={form.control} name="gender" render={({ field }) => ( <FormItem> <FormLabel>Gender *</FormLabel> <Select onValueChange={field.onChange} value={field.value}> <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl> <SelectContent> <SelectItem value="male">Male</SelectItem> <SelectItem value="female">Female</SelectItem> <SelectItem value="other">Other</SelectItem> <SelectItem value="prefer_not_to_say">Prefer not to say</SelectItem> </SelectContent> </Select> <FormMessage /> </FormItem> )} />
               <FormField control={form.control} name="mobileNo" render={({ field }) => ( <FormItem> <FormLabel>Mobile No. *</FormLabel> <FormControl><Input type="tel" {...field} /></FormControl> <FormMessage /> </FormItem> )} />
               <FormField control={form.control} name="email" render={({ field }) => ( <FormItem> <FormLabel>Email Address *</FormLabel> <FormControl><Input type="email" {...field} /></FormControl> <FormMessage /> </FormItem> )} />
@@ -294,7 +293,7 @@ export function EditPatientDialog({ patient, isOpen, onOpenChange, onSave }: Edi
               <FormField control={form.control} name="officeNo" render={({ field }) => ( <FormItem> <FormLabel>Office No.</FormLabel> <FormControl><Input type="tel" {...field} value={field.value || ""} /></FormControl> <FormMessage /> </FormItem> )} />
               <FormField control={form.control} name="dentalInsurance" render={({ field }) => ( <FormItem> <FormLabel>Dental Insurance</FormLabel> <FormControl><Input {...field} value={field.value || ""} /></FormControl> <FormMessage /> </FormItem> )} />
               <FormField control={form.control} name="faxNo" render={({ field }) => ( <FormItem> <FormLabel>Fax No.</FormLabel> <FormControl><Input type="tel" {...field} value={field.value || ""} /></FormControl> <FormMessage /> </FormItem> )} />
-              <FormField control={form.control} name="effectiveDate" render={({ field }) => ( <FormItem className="flex flex-col"> <FormLabel>Effective Date (Insurance)</FormLabel> <Popover> <PopoverTrigger asChild> <FormControl> <Button variant={"outline"} className={cn("w-full pl-3 text-left font-normal", !field.value && "text-muted-foreground")}> {field.value && isValid(new Date(field.value)) ? format(new Date(field.value), "PPP") : <span>Pick a date</span>} <CalendarIcon className="ml-auto h-4 w-4 opacity-50" /> </Button> </FormControl> </PopoverTrigger> <PopoverContent className="w-auto p-0" align="start"> <Calendar mode="single" selected={field.value && isValid(new Date(field.value)) ? new Date(field.value) : undefined} onSelect={(date) => field.onChange(date ? date.toISOString().split('T')[0] : '')} initialFocus /> </PopoverContent> </Popover> <FormMessage /> </FormItem> )} />
+              <FormField control={form.control} name="effectiveDate" render={({ field }) => ( <FormItem className="flex flex-col"> <FormLabel>Effective Date (Insurance)</FormLabel> <Popover> <FormControl> <PopoverTrigger asChild> <Button variant={"outline"} className={cn("w-full pl-3 text-left font-normal", !field.value && "text-muted-foreground")}> <span className="flex items-center justify-between w-full"> <span> {field.value && isValid(new Date(field.value)) ? format(new Date(field.value), "PPP") : "Pick a date"} </span> <CalendarIcon className="ml-auto h-4 w-4 opacity-50" /> </span> </Button> </PopoverTrigger> </FormControl> <PopoverContent className="w-auto p-0" align="start"> <Calendar mode="single" selected={field.value && isValid(new Date(field.value)) ? new Date(field.value) : undefined} onSelect={(date) => field.onChange(date ? date.toISOString().split('T')[0] : '')} initialFocus /> </PopoverContent> </Popover> <FormMessage /> </FormItem> )} />
               <FormField control={form.control} name="referredBy" render={({ field }) => ( <FormItem className="md:col-span-2"> <FormLabel>Whom may we thank for referring you?</FormLabel> <FormControl><Input {...field} value={field.value || ""} /></FormControl> <FormMessage /> </FormItem> )} />
             </div>
 
@@ -312,7 +311,7 @@ export function EditPatientDialog({ patient, isOpen, onOpenChange, onSave }: Edi
             <SectionTitle title="Dental History" />
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <FormField control={form.control} name="previousDentist" render={({ field }) => ( <FormItem> <FormLabel>Previous Dentist (Dr.)</FormLabel> <FormControl><Input {...field} value={field.value || ""} /></FormControl> <FormMessage /> </FormItem> )} />
-              <FormField control={form.control} name="lastDentalVisit" render={({ field }) => ( <FormItem className="flex flex-col"> <FormLabel>Last Dental Visit</FormLabel> <Popover> <PopoverTrigger asChild> <FormControl> <Button variant={"outline"} className={cn("w-full pl-3 text-left font-normal", !field.value && "text-muted-foreground")}> {field.value && isValid(new Date(field.value)) ? format(new Date(field.value), "PPP") : <span>Pick a date</span>} <CalendarIcon className="ml-auto h-4 w-4 opacity-50" /> </Button> </FormControl> </PopoverTrigger> <PopoverContent className="w-auto p-0" align="start"> <Calendar mode="single" selected={field.value && isValid(new Date(field.value)) ? new Date(field.value) : undefined} onSelect={(date) => field.onChange(date ? date.toISOString().split('T')[0] : '')} initialFocus /> </PopoverContent> </Popover> <FormMessage /> </FormItem> )} />
+              <FormField control={form.control} name="lastDentalVisit" render={({ field }) => ( <FormItem className="flex flex-col"> <FormLabel>Last Dental Visit</FormLabel> <Popover> <FormControl> <PopoverTrigger asChild> <Button variant={"outline"} className={cn("w-full pl-3 text-left font-normal", !field.value && "text-muted-foreground")}> <span className="flex items-center justify-between w-full"> <span> {field.value && isValid(new Date(field.value)) ? format(new Date(field.value), "PPP") : "Pick a date"} </span> <CalendarIcon className="ml-auto h-4 w-4 opacity-50" /> </span> </Button> </PopoverTrigger> </FormControl> <PopoverContent className="w-auto p-0" align="start"> <Calendar mode="single" selected={field.value && isValid(new Date(field.value)) ? new Date(field.value) : undefined} onSelect={(date) => field.onChange(date ? date.toISOString().split('T')[0] : '')} initialFocus /> </PopoverContent> </Popover> <FormMessage /> </FormItem> )} />
             </div>
 
             <SectionTitle title="Medical History" />
@@ -399,3 +398,5 @@ export function EditPatientDialog({ patient, isOpen, onOpenChange, onSave }: Edi
     </Dialog>
   );
 }
+
+    

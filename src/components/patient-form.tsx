@@ -151,7 +151,7 @@ export function PatientForm() {
   const watchTakingMedication = form.watch("q_takingMedication");
   const watchAllergyOther = form.watch("allergy_other");
   const watchCondOthers = form.watch("cond_others");
-  
+
   const [isMinor, setIsMinor] = useState(false);
   const dob = form.watch("dateOfBirth");
 
@@ -159,7 +159,7 @@ export function PatientForm() {
     if (dob) {
       try {
         const birthDate = new Date(dob);
-        if (isValid(birthDate)) { // Use isValid here
+        if (isValid(birthDate)) { 
           const today = new Date();
           let age = today.getFullYear() - birthDate.getFullYear();
           const m = today.getMonth() - birthDate.getMonth();
@@ -171,7 +171,7 @@ export function PatientForm() {
           setIsMinor(false);
         }
       } catch (e) {
-        setIsMinor(false); 
+        setIsMinor(false);
       }
     } else {
       setIsMinor(false);
@@ -181,12 +181,12 @@ export function PatientForm() {
 
   async function onSubmit(data: PatientFormData) {
     try {
-      await addPatient(data); 
+      await addPatient(data);
       toast({
         title: "Form Submitted",
         description: "Your medical information has been successfully submitted.",
       });
-      form.reset(); 
+      form.reset();
       setIsSubmittedSuccessfully(true);
     } catch (error) {
       console.error("Submission error:", error);
@@ -201,7 +201,7 @@ export function PatientForm() {
 
   const handleNewSubmission = () => {
     setIsSubmittedSuccessfully(false);
-    form.reset(); 
+    form.reset();
   };
 
   const conditionChecklistItems = [
@@ -256,13 +256,13 @@ export function PatientForm() {
       <CardContent>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-            
+
             <SectionTitle title="Patient Information Record" />
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <FormField control={form.control} name="firstName" render={({ field }) => ( <FormItem> <FormLabel>First Name *</FormLabel> <FormControl><Input placeholder="John" {...field} /></FormControl> <FormMessage /> </FormItem> )} />
               <FormField control={form.control} name="lastName" render={({ field }) => ( <FormItem> <FormLabel>Last Name *</FormLabel> <FormControl><Input placeholder="Doe" {...field} /></FormControl> <FormMessage /> </FormItem> )} />
               <FormField control={form.control} name="middleName" render={({ field }) => ( <FormItem> <FormLabel>Middle Name</FormLabel> <FormControl><Input placeholder="Michael" {...field} value={field.value || ""} /></FormControl> <FormMessage /> </FormItem> )} />
-              <FormField control={form.control} name="dateOfBirth" render={({ field }) => ( <FormItem className="flex flex-col"> <FormLabel>Date of Birth *</FormLabel> <Popover> <PopoverTrigger asChild> <FormControl> <Button variant={"outline"} className={cn( "w-full pl-3 text-left font-normal", !field.value && "text-muted-foreground" )}> {field.value && isValid(new Date(field.value)) ? format(new Date(field.value), "PPP") : <span>Pick a date</span>} <CalendarIcon className="ml-auto h-4 w-4 opacity-50" /> </Button> </FormControl> </PopoverTrigger> <PopoverContent className="w-auto p-0" align="start"> <Calendar mode="single" selected={field.value && isValid(new Date(field.value)) ? new Date(field.value) : undefined} onSelect={(date) => field.onChange(date ? date.toISOString().split('T')[0] : '')} disabled={(date) => date > new Date() || date < new Date("1900-01-01")} initialFocus /> </PopoverContent> </Popover> <FormMessage /> </FormItem> )} />
+              <FormField control={form.control} name="dateOfBirth" render={({ field }) => ( <FormItem className="flex flex-col"> <FormLabel>Date of Birth *</FormLabel> <Popover> <FormControl> <PopoverTrigger asChild> <Button variant={"outline"} className={cn( "w-full pl-3 text-left font-normal", !field.value && "text-muted-foreground" )}> <span className="flex items-center justify-between w-full"> <span> {field.value && isValid(new Date(field.value)) ? format(new Date(field.value), "PPP") : "Pick a date"} </span> <CalendarIcon className="ml-auto h-4 w-4 opacity-50" /> </span> </Button> </PopoverTrigger> </FormControl> <PopoverContent className="w-auto p-0" align="start"> <Calendar mode="single" selected={field.value && isValid(new Date(field.value)) ? new Date(field.value) : undefined} onSelect={(date) => field.onChange(date ? date.toISOString().split('T')[0] : '')} disabled={(date) => date > new Date() || date < new Date("1900-01-01")} initialFocus /> </PopoverContent> </Popover> <FormMessage /> </FormItem> )} />
               <FormField control={form.control} name="gender" render={({ field }) => ( <FormItem> <FormLabel>Gender *</FormLabel> <Select onValueChange={field.onChange} value={field.value}> <FormControl><SelectTrigger><SelectValue placeholder="Select gender" /></SelectTrigger></FormControl> <SelectContent> <SelectItem value="male">Male</SelectItem> <SelectItem value="female">Female</SelectItem> <SelectItem value="other">Other</SelectItem> <SelectItem value="prefer_not_to_say">Prefer not to say</SelectItem> </SelectContent> </Select> <FormMessage /> </FormItem> )} />
               <FormField control={form.control} name="mobileNo" render={({ field }) => ( <FormItem> <FormLabel>Mobile No. *</FormLabel> <FormControl><Input type="tel" placeholder="(123) 456-7890" {...field} /></FormControl> <FormMessage /> </FormItem> )} />
               <FormField control={form.control} name="email" render={({ field }) => ( <FormItem> <FormLabel>Email Address *</FormLabel> <FormControl><Input type="email" placeholder="john.doe@example.com" {...field} /></FormControl> <FormMessage /> </FormItem> )} />
@@ -274,7 +274,7 @@ export function PatientForm() {
               <FormField control={form.control} name="officeNo" render={({ field }) => ( <FormItem> <FormLabel>Office No.</FormLabel> <FormControl><Input type="tel" {...field} value={field.value || ""} /></FormControl> <FormMessage /> </FormItem> )} />
               <FormField control={form.control} name="dentalInsurance" render={({ field }) => ( <FormItem> <FormLabel>Dental Insurance</FormLabel> <FormControl><Input {...field} value={field.value || ""} /></FormControl> <FormMessage /> </FormItem> )} />
               <FormField control={form.control} name="faxNo" render={({ field }) => ( <FormItem> <FormLabel>Fax No.</FormLabel> <FormControl><Input type="tel" {...field} value={field.value || ""} /></FormControl> <FormMessage /> </FormItem> )} />
-              <FormField control={form.control} name="effectiveDate" render={({ field }) => ( <FormItem className="flex flex-col"> <FormLabel>Effective Date (Insurance)</FormLabel> <Popover> <PopoverTrigger asChild> <FormControl> <Button variant={"outline"} className={cn("w-full pl-3 text-left font-normal", !field.value && "text-muted-foreground")}> {field.value && isValid(new Date(field.value)) ? format(new Date(field.value), "PPP") : <span>Pick a date</span>} <CalendarIcon className="ml-auto h-4 w-4 opacity-50" /> </Button> </FormControl> </PopoverTrigger> <PopoverContent className="w-auto p-0" align="start"> <Calendar mode="single" selected={field.value && isValid(new Date(field.value)) ? new Date(field.value) : undefined} onSelect={(date) => field.onChange(date ? date.toISOString().split('T')[0] : '')} initialFocus /> </PopoverContent> </Popover> <FormMessage /> </FormItem> )} />
+              <FormField control={form.control} name="effectiveDate" render={({ field }) => ( <FormItem className="flex flex-col"> <FormLabel>Effective Date (Insurance)</FormLabel> <Popover> <FormControl> <PopoverTrigger asChild> <Button variant={"outline"} className={cn("w-full pl-3 text-left font-normal", !field.value && "text-muted-foreground")}> <span className="flex items-center justify-between w-full"> <span> {field.value && isValid(new Date(field.value)) ? format(new Date(field.value), "PPP") : "Pick a date"} </span> <CalendarIcon className="ml-auto h-4 w-4 opacity-50" /> </span> </Button> </PopoverTrigger> </FormControl> <PopoverContent className="w-auto p-0" align="start"> <Calendar mode="single" selected={field.value && isValid(new Date(field.value)) ? new Date(field.value) : undefined} onSelect={(date) => field.onChange(date ? date.toISOString().split('T')[0] : '')} initialFocus /> </PopoverContent> </Popover> <FormMessage /> </FormItem> )} />
               <FormField control={form.control} name="referredBy" render={({ field }) => ( <FormItem className="md:col-span-2"> <FormLabel>Whom may we thank for referring you?</FormLabel> <FormControl><Input {...field} value={field.value || ""} /></FormControl> <FormMessage /> </FormItem> )} />
             </div>
 
@@ -288,11 +288,11 @@ export function PatientForm() {
                 </div>
               </>
             )}
-            
+
             <SectionTitle title="Dental History" />
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <FormField control={form.control} name="previousDentist" render={({ field }) => ( <FormItem> <FormLabel>Previous Dentist (Dr.)</FormLabel> <FormControl><Input {...field} value={field.value || ""} /></FormControl> <FormMessage /> </FormItem> )} />
-              <FormField control={form.control} name="lastDentalVisit" render={({ field }) => ( <FormItem className="flex flex-col"> <FormLabel>Last Dental Visit</FormLabel> <Popover> <PopoverTrigger asChild> <FormControl> <Button variant={"outline"} className={cn("w-full pl-3 text-left font-normal", !field.value && "text-muted-foreground")}> {field.value && isValid(new Date(field.value)) ? format(new Date(field.value), "PPP") : <span>Pick a date</span>} <CalendarIcon className="ml-auto h-4 w-4 opacity-50" /> </Button> </FormControl> </PopoverTrigger> <PopoverContent className="w-auto p-0" align="start"> <Calendar mode="single" selected={field.value && isValid(new Date(field.value)) ? new Date(field.value) : undefined} onSelect={(date) => field.onChange(date ? date.toISOString().split('T')[0] : '')} initialFocus /> </PopoverContent> </Popover> <FormMessage /> </FormItem> )} />
+              <FormField control={form.control} name="lastDentalVisit" render={({ field }) => ( <FormItem className="flex flex-col"> <FormLabel>Last Dental Visit</FormLabel> <Popover> <FormControl> <PopoverTrigger asChild> <Button variant={"outline"} className={cn("w-full pl-3 text-left font-normal", !field.value && "text-muted-foreground")}> <span className="flex items-center justify-between w-full"> <span> {field.value && isValid(new Date(field.value)) ? format(new Date(field.value), "PPP") : "Pick a date"} </span> <CalendarIcon className="ml-auto h-4 w-4 opacity-50" /> </span> </Button> </PopoverTrigger> </FormControl> <PopoverContent className="w-auto p-0" align="start"> <Calendar mode="single" selected={field.value && isValid(new Date(field.value)) ? new Date(field.value) : undefined} onSelect={(date) => field.onChange(date ? date.toISOString().split('T')[0] : '')} initialFocus /> </PopoverContent> </Popover> <FormMessage /> </FormItem> )} />
             </div>
 
             <SectionTitle title="Medical History" />
@@ -305,18 +305,18 @@ export function PatientForm() {
             </div>
 
             <SubSectionTitle title="Health Questions" />
-            
+
             <FormField control={form.control} name="q_goodHealth" render={({ field }) => ( <FormItem className="flex flex-row items-center space-x-3 space-y-0 p-3 border rounded-md"> <FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl> <FormLabel className="font-normal">Are you in good health?</FormLabel> </FormItem> )} />
-            
+
             <FormField control={form.control} name="q_medicalTreatmentNow" render={({ field }) => ( <FormItem className="flex flex-row items-center space-x-3 space-y-0 p-3 border rounded-md"> <FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl> <FormLabel className="font-normal">Are you under medical treatment now?</FormLabel> </FormItem> )} />
             {watchMedicalTreatmentNow && <FormField control={form.control} name="q_medicalTreatmentCondition" render={({ field }) => ( <FormItem> <FormLabel>If so, what is the condition being treated?</FormLabel> <FormControl><Textarea {...field} value={field.value || ""} /></FormControl> <FormMessage /> </FormItem> )} />}
-            
+
             <FormField control={form.control} name="q_seriousIllnessOperation" render={({ field }) => ( <FormItem className="flex flex-row items-center space-x-3 space-y-0 p-3 border rounded-md"> <FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl> <FormLabel className="font-normal">Have you ever had serious illness or surgical operation?</FormLabel> </FormItem> )} />
             {watchSeriousIllnessOperation && <FormField control={form.control} name="q_seriousIllnessOperationDetails" render={({ field }) => ( <FormItem> <FormLabel>If so, what illness or surgical operation?</FormLabel> <FormControl><Textarea {...field} value={field.value || ""} /></FormControl> <FormMessage /> </FormItem> )} />}
 
             <FormField control={form.control} name="q_hospitalized" render={({ field }) => ( <FormItem className="flex flex-row items-center space-x-3 space-y-0 p-3 border rounded-md"> <FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl> <FormLabel className="font-normal">Have you ever been hospitalized?</FormLabel> </FormItem> )} />
             {watchHospitalized && <FormField control={form.control} name="q_hospitalizedDetails" render={({ field }) => ( <FormItem> <FormLabel>If so, when and why?</FormLabel> <FormControl><Textarea {...field} value={field.value || ""} /></FormControl> <FormMessage /> </FormItem> )} />}
-            
+
             <FormField control={form.control} name="q_takingMedication" render={({ field }) => ( <FormItem className="flex flex-row items-center space-x-3 space-y-0 p-3 border rounded-md"> <FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl> <FormLabel className="font-normal">Are you taking any prescription / non-prescription medication?</FormLabel> </FormItem> )} />
             {watchTakingMedication && <FormField control={form.control} name="q_medicationDetails" render={({ field }) => ( <FormItem> <FormLabel>If so, please specify.</FormLabel> <FormControl><Textarea placeholder="List medications and dosages" {...field} value={field.value || ""} /></FormControl> <FormMessage /> </FormItem> )} />}
 
@@ -340,7 +340,7 @@ export function PatientForm() {
               <FormField control={form.control} name="bloodType" render={({ field }) => ( <FormItem> <FormLabel>Blood Type</FormLabel> <FormControl><Input placeholder="e.g., A+, O-" {...field} value={field.value || ""} /></FormControl> <FormMessage /> </FormItem> )} />
               <FormField control={form.control} name="bloodPressure" render={({ field }) => ( <FormItem> <FormLabel>Blood Pressure</FormLabel> <FormControl><Input placeholder="e.g., 120/80" {...field} value={field.value || ""} /></FormControl> <FormMessage /> </FormItem> )} />
             </div>
-            
+
             <SubSectionTitle title="For Female Patients" />
             <FormField control={form.control} name="q_isPregnant" render={({ field }) => ( <FormItem className="flex flex-row items-center space-x-3 space-y-0 p-3 border rounded-md"> <FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl> <FormLabel className="font-normal">Are you pregnant?</FormLabel> </FormItem> )} />
             <FormField control={form.control} name="q_isNursing" render={({ field }) => ( <FormItem className="flex flex-row items-center space-x-3 space-y-0 p-3 border rounded-md"> <FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl> <FormLabel className="font-normal">Are you nursing?</FormLabel> </FormItem> )} />
@@ -364,7 +364,7 @@ export function PatientForm() {
               ))}
             </div>
             {watchCondOthers && <FormField control={form.control} name="cond_others_details" render={({ field }) => ( <FormItem> <FormLabel>Please specify other conditions:</FormLabel> <FormControl><Textarea {...field} value={field.value || ""} /></FormControl> <FormMessage /> </FormItem> )} />}
-            
+
             <Separator className="my-8" />
             <FormField control={form.control} name="reasonForVisit" render={({ field }) => ( <FormItem> <FormLabel>Primary Reason for This Visit / Chief Complaint *</FormLabel> <FormControl><Textarea placeholder="e.g., Routine check-up, toothache, etc." {...field} /></FormControl> <FormMessage /> </FormItem> )} />
 
@@ -379,3 +379,4 @@ export function PatientForm() {
   );
 }
 
+    
