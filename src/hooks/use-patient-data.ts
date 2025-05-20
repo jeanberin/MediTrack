@@ -3,21 +3,11 @@
 import { useState, useEffect, useCallback } from 'react';
 import type { Patient } from '@/types';
 import type { PatientFormData } from '@/lib/schemas';
-import { db } from '@/lib/firebase';
-import { 
-  collection, 
-  addDoc, 
-  getDocs, 
-  doc, 
-  updateDoc, 
-  deleteDoc, 
-  query, 
-  orderBy, 
-  serverTimestamp,
-  Timestamp
-} from "firebase/firestore";
 
-const PATIENTS_COLLECTION = 'patients';
+const PATIENTS_STORAGE_KEY = 'mediTrackPatients';
+
+// Helper function to generate a simple unique ID
+const generateId = () => new Date().toISOString() + Math.random().toString(36).substring(2, 9);
 
 export function usePatientData() {
   const [patients, setPatients] = useState<Patient[]>([]);
@@ -26,22 +16,22 @@ export function usePatientData() {
   const fetchPatients = useCallback(async () => {
     setIsLoading(true);
     try {
-      const patientsCollection = collection(db, PATIENTS_COLLECTION);
-      const q = query(patientsCollection, orderBy("submissionDate", "desc"));
-      const querySnapshot = await getDocs(q);
-      const patientsData = querySnapshot.docs.map(doc => {
-        const data = doc.data();
-        return {
-          id: doc.id,
-          ...data,
-          // Ensure dateOfBirth and submissionDate are correctly formatted if stored as Timestamps
-          dateOfBirth: data.dateOfBirth instanceof Timestamp ? data.dateOfBirth.toDate().toISOString().split('T')[0] : data.dateOfBirth,
-          submissionDate: data.submissionDate instanceof Timestamp ? data.submissionDate.toDate().toISOString() : data.submissionDate,
-        } as Patient;
-      });
-      setPatients(patientsData);
+      const storedPatients = localStorage.getItem(PATIENTS_STORAGE_KEY);
+      if (storedPatients) {
+        const parsedPatients = JSON.parse(storedPatients) as Patient[];
+        // Ensure dates are consistently strings and sort
+        const formattedPatients = parsedPatients.map(p => ({
+          ...p,
+          dateOfBirth: typeof p.dateOfBirth === 'string' ? p.dateOfBirth : new Date(p.dateOfBirth).toISOString().split('T')[0],
+          submissionDate: typeof p.submissionDate === 'string' ? p.submissionDate : new Date(p.submissionDate).toISOString(),
+        }));
+        setPatients(formattedPatients.sort((a, b) => new Date(b.submissionDate).getTime() - new Date(a.submissionDate).getTime()));
+      } else {
+        setPatients([]);
+      }
     } catch (error) {
-      console.error("Failed to load patients from Firestore", error);
+      console.error("Failed to load patients from localStorage", error);
+      setPatients([]); // Set to empty array on error
     }
     setIsLoading(false);
   }, []);
@@ -53,21 +43,19 @@ export function usePatientData() {
   const addPatient = useCallback(async (patientData: PatientFormData) => {
     setIsLoading(true);
     try {
-      const newPatientData = {
-        ...patientData,
-        submissionDate: Timestamp.fromDate(new Date()), // Store as Firestore Timestamp
-      };
-      const docRef = await addDoc(collection(db, PATIENTS_COLLECTION), newPatientData);
-      // Optimistically add to local state or refetch
-      // For simplicity, we can refetch, or add locally with the new ID
       const newPatient: Patient = {
-        id: docRef.id,
         ...patientData,
-        submissionDate: (newPatientData.submissionDate as Timestamp).toDate().toISOString(),
+        id: generateId(),
+        submissionDate: new Date().toISOString(),
       };
-      setPatients((prevPatients) => [newPatient, ...prevPatients].sort((a, b) => new Date(b.submissionDate).getTime() - new Date(a.submissionDate).getTime()));
+      
+      const currentPatients = JSON.parse(localStorage.getItem(PATIENTS_STORAGE_KEY) || '[]') as Patient[];
+      const updatedPatients = [newPatient, ...currentPatients].sort((a, b) => new Date(b.submissionDate).getTime() - new Date(a.submissionDate).getTime());
+      
+      localStorage.setItem(PATIENTS_STORAGE_KEY, JSON.stringify(updatedPatients));
+      setPatients(updatedPatients);
     } catch (error) {
-      console.error("Failed to add patient to Firestore", error);
+      console.error("Failed to add patient to localStorage", error);
     }
     setIsLoading(false);
   }, []);
@@ -75,22 +63,23 @@ export function usePatientData() {
   const updatePatient = useCallback(async (updatedPatient: Patient) => {
     setIsLoading(true);
     try {
-      const patientDocRef = doc(db, PATIENTS_COLLECTION, updatedPatient.id);
-      // Separate id from the rest of the data to be updated
-      const { id, ...dataToUpdate } = updatedPatient;
-       // Ensure submissionDate is a Firestore Timestamp if it was converted to string locally
-      const finalDataToUpdate = {
-        ...dataToUpdate,
-        submissionDate: dataToUpdate.submissionDate ? Timestamp.fromDate(new Date(dataToUpdate.submissionDate)) : serverTimestamp(),
-        dateOfBirth: dataToUpdate.dateOfBirth, // Assuming dateOfBirth is already a string 'YYYY-MM-DD'
-      };
+      const currentPatients = JSON.parse(localStorage.getItem(PATIENTS_STORAGE_KEY) || '[]') as Patient[];
+      const patientIndex = currentPatients.findIndex(p => p.id === updatedPatient.id);
 
-      await updateDoc(patientDocRef, finalDataToUpdate);
-      setPatients((prevPatients) =>
-        prevPatients.map((p) => (p.id === updatedPatient.id ? updatedPatient : p))
-      );
+      if (patientIndex !== -1) {
+        const updatedPatientsList = [...currentPatients];
+        // Ensure submissionDate is in ISO string format if it's being updated
+        updatedPatientsList[patientIndex] = {
+            ...updatedPatient,
+            submissionDate: updatedPatient.submissionDate ? new Date(updatedPatient.submissionDate).toISOString() : new Date().toISOString(),
+            dateOfBirth: updatedPatient.dateOfBirth ? new Date(updatedPatient.dateOfBirth).toISOString().split('T')[0] : '',
+        };
+        
+        localStorage.setItem(PATIENTS_STORAGE_KEY, JSON.stringify(updatedPatientsList));
+        setPatients(updatedPatientsList.sort((a, b) => new Date(b.submissionDate).getTime() - new Date(a.submissionDate).getTime()));
+      }
     } catch (error) {
-      console.error("Failed to update patient in Firestore", error);
+      console.error("Failed to update patient in localStorage", error);
     }
     setIsLoading(false);
   }, []);
@@ -98,13 +87,13 @@ export function usePatientData() {
   const deletePatient = useCallback(async (patientId: string) => {
     setIsLoading(true);
     try {
-      const patientDocRef = doc(db, PATIENTS_COLLECTION, patientId);
-      await deleteDoc(patientDocRef);
-      setPatients((prevPatients) =>
-        prevPatients.filter((p) => p.id !== patientId)
-      );
+      const currentPatients = JSON.parse(localStorage.getItem(PATIENTS_STORAGE_KEY) || '[]') as Patient[];
+      const updatedPatients = currentPatients.filter((p) => p.id !== patientId);
+      
+      localStorage.setItem(PATIENTS_STORAGE_KEY, JSON.stringify(updatedPatients));
+      setPatients(updatedPatients); // No need to re-sort if order is maintained by addition
     } catch (error) {
-      console.error("Failed to delete patient from Firestore", error);
+      console.error("Failed to delete patient from localStorage", error);
     }
     setIsLoading(false);
   }, []);
