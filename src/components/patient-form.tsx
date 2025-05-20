@@ -33,13 +33,15 @@ import {
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { usePatientData } from '@/hooks/use-patient-data';
-import { CalendarIcon, Save } from 'lucide-react';
+import { CalendarIcon, Save, CheckCircle, Edit3 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
+import { useState } from 'react';
 
 export function PatientForm() {
   const { toast } = useToast();
   const { addPatient } = usePatientData();
+  const [isSubmittedSuccessfully, setIsSubmittedSuccessfully] = useState(false);
 
   const form = useForm<PatientFormData>({
     resolver: zodResolver(patientFormSchema),
@@ -65,14 +67,15 @@ export function PatientForm() {
 
   const watchHasOtherConditions = form.watch("hasOtherConditions");
 
-  function onSubmit(data: PatientFormData) {
+  async function onSubmit(data: PatientFormData) {
     try {
-      addPatient(data);
+      await addPatient(data); // Assume addPatient is async if it interacts with Firestore
       toast({
         title: "Form Submitted",
         description: "Your medical information has been successfully submitted.",
       });
       form.reset();
+      setIsSubmittedSuccessfully(true);
     } catch (error) {
       console.error("Submission error:", error);
       toast({
@@ -80,8 +83,15 @@ export function PatientForm() {
         description: "There was an error submitting your form. Please try again.",
         variant: "destructive",
       });
+      setIsSubmittedSuccessfully(false);
     }
   }
+
+  const handleNewSubmission = () => {
+    setIsSubmittedSuccessfully(false);
+    // form.reset() is already called in onSubmit, 
+    // but if needed for other scenarios, it can be called here.
+  };
 
   const conditionOptions = [
     { id: "hasHypertension", label: "Hypertension" },
@@ -89,6 +99,27 @@ export function PatientForm() {
     { id: "hasAsthma", label: "Asthma" },
     { id: "hasOtherConditions", label: "Other" },
   ] as const;
+
+  if (isSubmittedSuccessfully) {
+    return (
+      <Card className="w-full max-w-2xl mx-auto shadow-lg text-center">
+        <CardHeader>
+          <div className="flex flex-col items-center text-center">
+            <CheckCircle className="h-16 w-16 text-green-500 mb-4" />
+            <CardTitle className="text-2xl">Submission Successful!</CardTitle>
+            <CardDescription className="mt-2 text-lg">
+              Your medical information has been recorded.
+            </CardDescription>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <Button onClick={handleNewSubmission} className="w-full max-w-xs mx-auto">
+            <Edit3 className="mr-2 h-4 w-4" /> Submit Another Response
+          </Button>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card className="w-full max-w-2xl mx-auto shadow-lg">
@@ -275,7 +306,7 @@ export function PatientForm() {
                       <Textarea 
                         placeholder="List other conditions here" 
                         {...field} 
-                        value={field.value || ""} // Ensure value is not undefined
+                        value={field.value || ""} 
                       />
                     </FormControl>
                     <FormMessage />
@@ -298,7 +329,7 @@ export function PatientForm() {
                     <Textarea 
                       placeholder="e.g., Lisinopril 10mg daily" 
                       {...field} 
-                      value={field.value || ""} // Ensure value is not undefined
+                      value={field.value || ""} 
                     />
                   </FormControl>
                   <FormMessage />
@@ -334,7 +365,7 @@ export function PatientForm() {
                     <Input 
                       placeholder="e.g., Blue Cross Blue Shield" 
                       {...field} 
-                      value={field.value || ""} // Ensure value is not undefined
+                      value={field.value || ""} 
                     />
                   </FormControl>
                   <FormMessage />
@@ -351,7 +382,7 @@ export function PatientForm() {
                     <Input 
                       placeholder="e.g., XZY123456789" 
                       {...field} 
-                      value={field.value || ""} // Ensure value is not undefined
+                      value={field.value || ""} 
                     />
                   </FormControl>
                   <FormMessage />
@@ -369,3 +400,5 @@ export function PatientForm() {
     </Card>
   );
 }
+
+    
