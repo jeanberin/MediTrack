@@ -13,8 +13,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { FilePenLine, Info, Search, Trash2 } from 'lucide-react';
-import { useState, useMemo } from 'react';
+import { FilePenLine, Info, Search, Trash2, RefreshCw } from 'lucide-react';
+import { useState, useMemo, useEffect } from 'react';
 import { EditPatientDialog } from './edit-patient-dialog';
 import { usePatientData } from '@/hooks/use-patient-data';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -28,9 +28,9 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
+import { format } from 'date-fns';
 
 
 interface PatientDataProps {
@@ -38,13 +38,24 @@ interface PatientDataProps {
 }
 
 export function PatientDataTable({}: PatientDataProps) {
-  const { patients, updatePatient, deletePatient, isLoading } = usePatientData();
+  const { patients, updatePatient, deletePatient, isLoading, refetchPatients } = usePatientData();
   const { toast } = useToast();
   const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
   const [patientToDelete, setPatientToDelete] = useState<Patient | null>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState<string>("");
+  const [isRefetching, setIsRefetching] = useState(false);
+
+  const handleRefresh = async () => {
+    setIsRefetching(true);
+    await refetchPatients();
+    setIsRefetching(false);
+    toast({
+      title: "Data Refreshed",
+      description: "Patient list has been updated.",
+    });
+  };
 
   const handleEdit = (patient: Patient) => {
     setSelectedPatient(patient);
@@ -56,9 +67,9 @@ export function PatientDataTable({}: PatientDataProps) {
     setIsDeleteDialogOpen(true);
   };
 
-  const handleConfirmDelete = () => {
+  const handleConfirmDelete = async () => {
     if (patientToDelete) {
-      deletePatient(patientToDelete.id);
+      await deletePatient(patientToDelete.id);
       toast({
         title: "Patient Record Deleted",
         description: `${patientToDelete.fullName}'s record has been successfully deleted.`,
@@ -68,10 +79,11 @@ export function PatientDataTable({}: PatientDataProps) {
     }
   };
 
-  const handleSavePatient = (updatedPatient: Patient) => {
-    updatePatient(updatedPatient);
+  const handleSavePatient = async (updatedPatient: Patient) => {
+    await updatePatient(updatedPatient);
     setIsEditDialogOpen(false);
     setSelectedPatient(null);
+    // No need to call refetch here if updatePatient optimistically updates or if global state handles it
   };
 
   const filteredPatients = useMemo(() => {
@@ -83,7 +95,7 @@ export function PatientDataTable({}: PatientDataProps) {
     );
   }, [patients, searchTerm]);
 
-  if (isLoading) {
+  if (isLoading && patients.length === 0 && !isRefetching) { // Show skeleton only on initial load
     return (
       <Card className="shadow-lg">
         <CardHeader>
@@ -91,7 +103,10 @@ export function PatientDataTable({}: PatientDataProps) {
           <CardDescription>Loading patient data...</CardDescription>
         </CardHeader>
         <CardContent>
-          <Skeleton className="h-10 w-full mb-4" /> 
+          <div className="flex justify-between items-center mb-4">
+            <Skeleton className="h-10 w-[200px] md:w-[320px]" />
+            <Skeleton className="h-10 w-28" />
+          </div>
           <div className="space-y-4">
             {[...Array(5)].map((_, i) => (
               <Skeleton key={i} className="h-12 w-full" />
@@ -112,8 +127,8 @@ export function PatientDataTable({}: PatientDataProps) {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="mb-4">
-            <div className="relative">
+          <div className="flex flex-col sm:flex-row justify-between items-center mb-4 gap-2">
+            <div className="relative w-full sm:w-auto">
               <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
               <Input
                 type="search"
@@ -123,13 +138,22 @@ export function PatientDataTable({}: PatientDataProps) {
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
             </div>
+            <Button onClick={handleRefresh} disabled={isRefetching || isLoading} variant="outline" size="sm">
+              <RefreshCw className={`mr-2 h-4 w-4 ${isRefetching ? 'animate-spin' : ''}`} />
+              {isRefetching ? 'Refreshing...' : 'Refresh Data'}
+            </Button>
           </div>
 
-          {patients.length === 0 ? (
+          {(isLoading && patients.length === 0 && !isRefetching) ? ( // Redundant check, but for safety
+             <div className="flex flex-col items-center justify-center py-12 text-center">
+                <Info className="w-16 h-16 text-muted-foreground mb-4" />
+                <p className="text-xl font-semibold text-muted-foreground">Loading data...</p>
+              </div>
+          ) : !isLoading && patients.length === 0 ? (
              <div className="flex flex-col items-center justify-center py-12 text-center">
                 <Info className="w-16 h-16 text-muted-foreground mb-4" />
                 <p className="text-xl font-semibold text-muted-foreground">No Patient Data</p>
-                <p className="text-muted-foreground">No patient forms have been submitted yet.</p>
+                <p className="text-muted-foreground">No patient forms have been submitted yet, or none were found in the database.</p>
               </div>
           ) : filteredPatients.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-12 text-center">
@@ -155,14 +179,14 @@ export function PatientDataTable({}: PatientDataProps) {
                   {filteredPatients.map((patient) => (
                     <TableRow key={patient.id}>
                       <TableCell className="font-medium">{patient.fullName}</TableCell>
-                      <TableCell>{new Date(patient.dateOfBirth).toLocaleDateString()}</TableCell>
+                      <TableCell>{format(new Date(patient.dateOfBirth), "PPP")}</TableCell>
                       <TableCell>
                         <Badge variant="secondary" className="capitalize">{patient.gender.replace('_', ' ')}</Badge>
                       </TableCell>
                       <TableCell className="hidden md:table-cell">{patient.contactNumber}</TableCell>
                       <TableCell className="hidden lg:table-cell">{patient.email}</TableCell>
                       <TableCell className="hidden sm:table-cell">
-                        {new Date(patient.submissionDate).toLocaleDateString()}
+                         {format(new Date(patient.submissionDate), "PPpp")}
                       </TableCell>
                       <TableCell className="text-right space-x-2">
                         <Button variant="outline" size="sm" onClick={() => handleEdit(patient)}>
@@ -197,7 +221,7 @@ export function PatientDataTable({}: PatientDataProps) {
             </AlertDialogHeader>
             <AlertDialogFooter>
               <AlertDialogCancel onClick={() => setPatientToDelete(null)}>Cancel</AlertDialogCancel>
-              <AlertDialogAction onClick={handleConfirmDelete}>
+              <AlertDialogAction onClick={handleConfirmDelete} className="bg-destructive hover:bg-destructive/90 text-destructive-foreground">
                 Delete
               </AlertDialogAction>
             </AlertDialogFooter>
