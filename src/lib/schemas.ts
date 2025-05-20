@@ -2,7 +2,9 @@
 import { z } from 'zod';
 
 export const patientFormSchema = z.object({
-  fullName: z.string().min(2, { message: "Full name must be at least 2 characters." }).max(100),
+  firstName: z.string().min(1, { message: "First name is required." }).max(50),
+  middleName: z.string().max(50).optional(),
+  lastName: z.string().min(1, { message: "Last name is required." }).max(50),
   dateOfBirth: z.string().refine((val) => !isNaN(Date.parse(val)), { message: "Please select a valid date of birth." }),
   gender: z.enum(['male', 'female', 'other', 'prefer_not_to_say'], { required_error: "Please select a gender." }),
   contactNumber: z.string().min(10, { message: "Contact number must be at least 10 digits." }).max(15),
@@ -23,6 +25,7 @@ export const patientFormSchema = z.object({
   insurancePolicyNumber: z.string().max(100).optional(),
 });
 
+// This type will represent the data coming directly from the form
 export type PatientFormData = z.infer<typeof patientFormSchema>;
 
 export const loginFormSchema = z.object({

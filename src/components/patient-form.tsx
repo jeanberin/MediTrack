@@ -46,7 +46,9 @@ export function PatientForm() {
   const form = useForm<PatientFormData>({
     resolver: zodResolver(patientFormSchema),
     defaultValues: {
-      fullName: "",
+      firstName: "",
+      middleName: "",
+      lastName: "",
       dateOfBirth: "",
       gender: undefined,
       contactNumber: "",
@@ -69,7 +71,7 @@ export function PatientForm() {
 
   async function onSubmit(data: PatientFormData) {
     try {
-      await addPatient(data); // Assume addPatient is async if it interacts with Firestore
+      await addPatient(data); 
       toast({
         title: "Form Submitted",
         description: "Your medical information has been successfully submitted.",
@@ -89,8 +91,7 @@ export function PatientForm() {
 
   const handleNewSubmission = () => {
     setIsSubmittedSuccessfully(false);
-    // form.reset() is already called in onSubmit, 
-    // but if needed for other scenarios, it can be called here.
+    form.reset(); // Ensure form is reset for new submission
   };
 
   const conditionOptions = [
@@ -130,19 +131,53 @@ export function PatientForm() {
       <CardContent>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-            <FormField
-              control={form.control}
-              name="fullName"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Full Name</FormLabel>
-                  <FormControl>
-                    <Input placeholder="John Doe" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+            <div className="grid grid-cols-1 gap-x-6 gap-y-4 sm:grid-cols-6">
+              <div className="sm:col-span-3">
+                <FormField
+                  control={form.control}
+                  name="firstName"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>First Name</FormLabel>
+                      <FormControl>
+                        <Input placeholder="John" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+              <div className="sm:col-span-3">
+                <FormField
+                  control={form.control}
+                  name="lastName"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Last Name</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Doe" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+              <div className="sm:col-span-full">
+                 <FormField
+                  control={form.control}
+                  name="middleName"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Middle Name (Optional)</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Michael" {...field} value={field.value || ""} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+            </div>
             
             <FormField
               control={form.control}
@@ -400,5 +435,3 @@ export function PatientForm() {
     </Card>
   );
 }
-
-    

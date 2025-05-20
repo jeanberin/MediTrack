@@ -9,6 +9,11 @@ const PATIENTS_STORAGE_KEY = 'mediTrackPatients';
 // Helper function to generate a simple unique ID
 const generateId = () => new Date().toISOString() + Math.random().toString(36).substring(2, 9);
 
+// Helper function to construct full name
+const constructFullName = (firstName: string, middleName: string | undefined, lastName: string): string => {
+  return `${firstName} ${middleName ? middleName + ' ' : ''}${lastName}`.trim();
+};
+
 export function usePatientData() {
   const [patients, setPatients] = useState<Patient[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -19,7 +24,6 @@ export function usePatientData() {
       const storedPatients = localStorage.getItem(PATIENTS_STORAGE_KEY);
       if (storedPatients) {
         const parsedPatients = JSON.parse(storedPatients) as Patient[];
-        // Ensure dates are consistently strings and sort
         const formattedPatients = parsedPatients.map(p => ({
           ...p,
           dateOfBirth: typeof p.dateOfBirth === 'string' ? p.dateOfBirth : new Date(p.dateOfBirth).toISOString().split('T')[0],
@@ -31,7 +35,7 @@ export function usePatientData() {
       }
     } catch (error) {
       console.error("Failed to load patients from localStorage", error);
-      setPatients([]); // Set to empty array on error
+      setPatients([]);
     }
     setIsLoading(false);
   }, []);
@@ -43,37 +47,44 @@ export function usePatientData() {
   const addPatient = useCallback(async (patientData: PatientFormData) => {
     setIsLoading(true);
     try {
+      const fullName = constructFullName(patientData.firstName, patientData.middleName, patientData.lastName);
       const newPatient: Patient = {
         ...patientData,
         id: generateId(),
+        fullName: fullName,
         submissionDate: new Date().toISOString(),
       };
       
       const currentPatients = JSON.parse(localStorage.getItem(PATIENTS_STORAGE_KEY) || '[]') as Patient[];
-      const updatedPatients = [newPatient, ...currentPatients].sort((a, b) => new Date(b.submissionDate).getTime() - new Date(a.submissionDate).getTime());
+      const updatedPatientsList = [newPatient, ...currentPatients].sort((a, b) => new Date(b.submissionDate).getTime() - new Date(a.submissionDate).getTime());
       
-      localStorage.setItem(PATIENTS_STORAGE_KEY, JSON.stringify(updatedPatients));
-      setPatients(updatedPatients);
+      localStorage.setItem(PATIENTS_STORAGE_KEY, JSON.stringify(updatedPatientsList));
+      setPatients(updatedPatientsList);
     } catch (error) {
       console.error("Failed to add patient to localStorage", error);
     }
     setIsLoading(false);
   }, []);
 
-  const updatePatient = useCallback(async (updatedPatient: Patient) => {
+  const updatePatient = useCallback(async (updatedPatientData: Patient) => {
+    // Note: updatedPatientData here is the full Patient object, potentially with new firstName, lastName, middleName
+    // So, fullName should be reconstructed based on these.
     setIsLoading(true);
     try {
       const currentPatients = JSON.parse(localStorage.getItem(PATIENTS_STORAGE_KEY) || '[]') as Patient[];
-      const patientIndex = currentPatients.findIndex(p => p.id === updatedPatient.id);
+      const patientIndex = currentPatients.findIndex(p => p.id === updatedPatientData.id);
 
       if (patientIndex !== -1) {
-        const updatedPatientsList = [...currentPatients];
-        // Ensure submissionDate is in ISO string format if it's being updated
-        updatedPatientsList[patientIndex] = {
-            ...updatedPatient,
-            submissionDate: updatedPatient.submissionDate ? new Date(updatedPatient.submissionDate).toISOString() : new Date().toISOString(),
-            dateOfBirth: updatedPatient.dateOfBirth ? new Date(updatedPatient.dateOfBirth).toISOString().split('T')[0] : '',
+        const fullName = constructFullName(updatedPatientData.firstName, updatedPatientData.middleName, updatedPatientData.lastName);
+        const patientToSave: Patient = {
+          ...updatedPatientData,
+          fullName: fullName, // Ensure fullName is updated
+          submissionDate: updatedPatientData.submissionDate ? new Date(updatedPatientData.submissionDate).toISOString() : new Date().toISOString(),
+          dateOfBirth: updatedPatientData.dateOfBirth ? new Date(updatedPatientData.dateOfBirth).toISOString().split('T')[0] : '',
         };
+
+        const updatedPatientsList = [...currentPatients];
+        updatedPatientsList[patientIndex] = patientToSave;
         
         localStorage.setItem(PATIENTS_STORAGE_KEY, JSON.stringify(updatedPatientsList));
         setPatients(updatedPatientsList.sort((a, b) => new Date(b.submissionDate).getTime() - new Date(a.submissionDate).getTime()));
@@ -91,7 +102,7 @@ export function usePatientData() {
       const updatedPatients = currentPatients.filter((p) => p.id !== patientId);
       
       localStorage.setItem(PATIENTS_STORAGE_KEY, JSON.stringify(updatedPatients));
-      setPatients(updatedPatients); // No need to re-sort if order is maintained by addition
+      setPatients(updatedPatients);
     } catch (error) {
       console.error("Failed to delete patient from localStorage", error);
     }

@@ -49,12 +49,13 @@ interface EditPatientDialogProps {
   patient: Patient | null;
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
-  onSave: (updatedPatient: Patient) => void;
+  onSave: (updatedPatient: Patient) => void; // Expects the full Patient object
 }
 
 export function EditPatientDialog({ patient, isOpen, onOpenChange, onSave }: EditPatientDialogProps) {
   const { toast } = useToast();
 
+  // Form uses PatientFormData for its structure, matching the schema
   const form = useForm<PatientFormData>({
     resolver: zodResolver(patientFormSchema),
   });
@@ -62,9 +63,11 @@ export function EditPatientDialog({ patient, isOpen, onOpenChange, onSave }: Edi
   const watchHasOtherConditions = form.watch("hasOtherConditions");
 
   useEffect(() => {
-    if (patient && isOpen) { // Also check isOpen to re-initialize if dialog is reopened with same patient
+    if (patient && isOpen) {
       form.reset({
-        fullName: patient.fullName,
+        firstName: patient.firstName,
+        middleName: patient.middleName || "",
+        lastName: patient.lastName,
         dateOfBirth: patient.dateOfBirth,
         gender: patient.gender,
         contactNumber: patient.contactNumber,
@@ -86,16 +89,21 @@ export function EditPatientDialog({ patient, isOpen, onOpenChange, onSave }: Edi
 
   if (!patient) return null;
 
+  // data is PatientFormData
   function onSubmit(data: PatientFormData) {
     try {
-      const updatedPatient: Patient = {
-        ...patient, 
-        ...data,   
+      // Construct the full Patient object to send to onSave
+      const constructedFullName = `${data.firstName} ${data.middleName ? data.middleName + ' ' : ''}${data.lastName}`.trim();
+      const patientToSave: Patient = {
+        ...patient, // Includes id, submissionDate, etc.
+        ...data,    // Includes form fields like firstName, lastName, medicalHistory etc.
+        fullName: constructedFullName, // Set the newly constructed fullName
       };
-      onSave(updatedPatient);
+      
+      onSave(patientToSave);
       toast({
         title: "Patient Data Updated",
-        description: `${patient.fullName}'s information has been successfully updated.`,
+        description: `${patientToSave.fullName}'s information has been successfully updated.`,
       });
       onOpenChange(false); 
     } catch (error) {
@@ -124,17 +132,48 @@ export function EditPatientDialog({ patient, isOpen, onOpenChange, onSave }: Edi
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 px-1 py-2">
-            <FormField
-              control={form.control}
-              name="fullName"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Full Name</FormLabel>
-                  <FormControl><Input {...field} /></FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+            <div className="grid grid-cols-1 gap-x-6 gap-y-4 sm:grid-cols-6">
+              <div className="sm:col-span-3">
+                <FormField
+                  control={form.control}
+                  name="firstName"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>First Name</FormLabel>
+                      <FormControl><Input {...field} /></FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+              <div className="sm:col-span-3">
+                <FormField
+                  control={form.control}
+                  name="lastName"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Last Name</FormLabel>
+                      <FormControl><Input {...field} /></FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+              <div className="sm:col-span-full">
+                <FormField
+                  control={form.control}
+                  name="middleName"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Middle Name (Optional)</FormLabel>
+                      <FormControl><Input {...field} value={field.value || ""} /></FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+            </div>
+
              <FormField
               control={form.control}
               name="dateOfBirth"

@@ -1,7 +1,10 @@
 
 export interface Patient {
   id: string;
-  fullName: string;
+  firstName: string;
+  middleName?: string;
+  lastName: string;
+  fullName: string; // Constructed from firstName, middleName, lastName
   dateOfBirth: string; 
   gender: 'male' | 'female' | 'other' | 'prefer_not_to_say';
   contactNumber: string;
