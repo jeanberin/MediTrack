@@ -306,6 +306,9 @@ export function EditPatientDialog({ patient, isOpen, onOpenChange, onSave }: Edi
                         onSelect={(date) => field.onChange(date ? date.toISOString().split('T')[0] : '')} 
                         disabled={(date) => date > new Date() || date < new Date("1900-01-01")} 
                         initialFocus 
+                        captionLayout="dropdown-buttons"
+                        fromYear={1900}
+                        toYear={new Date().getFullYear()}
                       /> 
                     </PopoverContent> 
                   </Popover> 
@@ -347,6 +350,9 @@ export function EditPatientDialog({ patient, isOpen, onOpenChange, onSave }: Edi
                         selected={field.value && isValid(new Date(field.value)) ? new Date(field.value) : undefined} 
                         onSelect={(date) => field.onChange(date ? date.toISOString().split('T')[0] : '')} 
                         initialFocus 
+                        captionLayout="dropdown-buttons"
+                        fromYear={new Date().getFullYear() - 10}
+                        toYear={new Date().getFullYear() + 10}
                       /> 
                     </PopoverContent> 
                   </Popover> 
@@ -394,6 +400,9 @@ export function EditPatientDialog({ patient, isOpen, onOpenChange, onSave }: Edi
                         selected={field.value && isValid(new Date(field.value)) ? new Date(field.value) : undefined} 
                         onSelect={(date) => field.onChange(date ? date.toISOString().split('T')[0] : '')} 
                         initialFocus 
+                        captionLayout="dropdown-buttons"
+                        fromYear={new Date().getFullYear() - 50}
+                        toYear={new Date().getFullYear()}
                       /> 
                     </PopoverContent> 
                   </Popover> 
@@ -486,3 +495,5 @@ export function EditPatientDialog({ patient, isOpen, onOpenChange, onSave }: Edi
     </Dialog>
   );
 }
+
+    

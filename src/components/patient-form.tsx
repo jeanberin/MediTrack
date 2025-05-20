@@ -262,10 +262,10 @@ export function PatientForm() {
               <FormField control={form.control} name="firstName" render={({ field }) => ( <FormItem> <FormLabel>First Name *</FormLabel> <FormControl><Input placeholder="John" {...field} /></FormControl> <FormMessage /> </FormItem> )} />
               <FormField control={form.control} name="lastName" render={({ field }) => ( <FormItem> <FormLabel>Last Name *</FormLabel> <FormControl><Input placeholder="Doe" {...field} /></FormControl> <FormMessage /> </FormItem> )} />
               <FormField control={form.control} name="middleName" render={({ field }) => ( <FormItem> <FormLabel>Middle Name</FormLabel> <FormControl><Input placeholder="Michael" {...field} value={field.value || ""} /></FormControl> <FormMessage /> </FormItem> )} />
-              <FormField control={form.control} name="dateOfBirth" render={({ field }) => (
-                <FormItem className="flex flex-col">
-                  <FormLabel>Date of Birth *</FormLabel>
-                  <Popover>
+              <FormField control={form.control} name="dateOfBirth" render={({ field }) => ( 
+                <FormItem className="flex flex-col"> 
+                  <FormLabel>Date of Birth *</FormLabel> 
+                  <Popover> 
                     <PopoverTrigger asChild>
                       <Button
                         ref={field.ref}
@@ -280,18 +280,21 @@ export function PatientForm() {
                         </span>
                       </Button>
                     </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="start">
-                      <Calendar
-                        mode="single"
-                        selected={field.value && isValid(new Date(field.value)) ? new Date(field.value) : undefined}
-                        onSelect={(date) => field.onChange(date ? date.toISOString().split('T')[0] : '')}
-                        disabled={(date) => date > new Date() || date < new Date("1900-01-01")}
-                        initialFocus
-                      />
-                    </PopoverContent>
-                  </Popover>
-                  <FormMessage />
-                </FormItem>
+                    <PopoverContent className="w-auto p-0" align="start"> 
+                      <Calendar 
+                        mode="single" 
+                        selected={field.value && isValid(new Date(field.value)) ? new Date(field.value) : undefined} 
+                        onSelect={(date) => field.onChange(date ? date.toISOString().split('T')[0] : '')} 
+                        disabled={(date) => date > new Date() || date < new Date("1900-01-01")} 
+                        initialFocus 
+                        captionLayout="dropdown-buttons"
+                        fromYear={1900}
+                        toYear={new Date().getFullYear()}
+                      /> 
+                    </PopoverContent> 
+                  </Popover> 
+                  <FormMessage /> 
+                </FormItem> 
               )} />
               <FormField control={form.control} name="gender" render={({ field }) => ( <FormItem> <FormLabel>Gender *</FormLabel> <Select onValueChange={field.onChange} value={field.value}> <FormControl><SelectTrigger><SelectValue placeholder="Select gender" /></SelectTrigger></FormControl> <SelectContent> <SelectItem value="male">Male</SelectItem> <SelectItem value="female">Female</SelectItem> <SelectItem value="other">Other</SelectItem> <SelectItem value="prefer_not_to_say">Prefer not to say</SelectItem> </SelectContent> </Select> <FormMessage /> </FormItem> )} />
               <FormField control={form.control} name="mobileNo" render={({ field }) => ( <FormItem> <FormLabel>Mobile No. *</FormLabel> <FormControl><Input type="tel" placeholder="(123) 456-7890" {...field} /></FormControl> <FormMessage /> </FormItem> )} />
@@ -304,10 +307,10 @@ export function PatientForm() {
               <FormField control={form.control} name="officeNo" render={({ field }) => ( <FormItem> <FormLabel>Office No.</FormLabel> <FormControl><Input type="tel" {...field} value={field.value || ""} /></FormControl> <FormMessage /> </FormItem> )} />
               <FormField control={form.control} name="dentalInsurance" render={({ field }) => ( <FormItem> <FormLabel>Dental Insurance</FormLabel> <FormControl><Input {...field} value={field.value || ""} /></FormControl> <FormMessage /> </FormItem> )} />
               <FormField control={form.control} name="faxNo" render={({ field }) => ( <FormItem> <FormLabel>Fax No.</FormLabel> <FormControl><Input type="tel" {...field} value={field.value || ""} /></FormControl> <FormMessage /> </FormItem> )} />
-              <FormField control={form.control} name="effectiveDate" render={({ field }) => (
-                <FormItem className="flex flex-col">
-                  <FormLabel>Effective Date (Insurance)</FormLabel>
-                  <Popover>
+              <FormField control={form.control} name="effectiveDate" render={({ field }) => ( 
+                <FormItem className="flex flex-col"> 
+                  <FormLabel>Effective Date (Insurance)</FormLabel> 
+                  <Popover> 
                     <PopoverTrigger asChild>
                       <Button
                         ref={field.ref}
@@ -322,17 +325,20 @@ export function PatientForm() {
                         </span>
                       </Button>
                     </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="start">
-                      <Calendar
-                        mode="single"
-                        selected={field.value && isValid(new Date(field.value)) ? new Date(field.value) : undefined}
-                        onSelect={(date) => field.onChange(date ? date.toISOString().split('T')[0] : '')}
-                        initialFocus
-                      />
-                    </PopoverContent>
-                  </Popover>
-                  <FormMessage />
-                </FormItem>
+                    <PopoverContent className="w-auto p-0" align="start"> 
+                      <Calendar 
+                        mode="single" 
+                        selected={field.value && isValid(new Date(field.value)) ? new Date(field.value) : undefined} 
+                        onSelect={(date) => field.onChange(date ? date.toISOString().split('T')[0] : '')} 
+                        initialFocus 
+                        captionLayout="dropdown-buttons"
+                        fromYear={new Date().getFullYear() - 10}
+                        toYear={new Date().getFullYear() + 10}
+                      /> 
+                    </PopoverContent> 
+                  </Popover> 
+                  <FormMessage /> 
+                </FormItem> 
               )} />
               <FormField control={form.control} name="referredBy" render={({ field }) => ( <FormItem className="md:col-span-2"> <FormLabel>Whom may we thank for referring you?</FormLabel> <FormControl><Input {...field} value={field.value || ""} /></FormControl> <FormMessage /> </FormItem> )} />
             </div>
@@ -351,11 +357,11 @@ export function PatientForm() {
             <SectionTitle title="Dental History" />
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <FormField control={form.control} name="previousDentist" render={({ field }) => ( <FormItem> <FormLabel>Previous Dentist (Dr.)</FormLabel> <FormControl><Input {...field} value={field.value || ""} /></FormControl> <FormMessage /> </FormItem> )} />
-              <FormField control={form.control} name="lastDentalVisit" render={({ field }) => (
-                <FormItem className="flex flex-col">
-                  <FormLabel>Last Dental Visit</FormLabel>
-                  <Popover>
-                    <PopoverTrigger asChild>
+              <FormField control={form.control} name="lastDentalVisit" render={({ field }) => ( 
+                <FormItem className="flex flex-col"> 
+                  <FormLabel>Last Dental Visit</FormLabel> 
+                  <Popover> 
+                    <PopoverTrigger asChild> 
                       <Button
                         ref={field.ref}
                         variant={"outline"}
@@ -368,18 +374,21 @@ export function PatientForm() {
                           <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
                         </span>
                       </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="start">
-                      <Calendar
-                        mode="single"
-                        selected={field.value && isValid(new Date(field.value)) ? new Date(field.value) : undefined}
-                        onSelect={(date) => field.onChange(date ? date.toISOString().split('T')[0] : '')}
-                        initialFocus
-                      />
-                    </PopoverContent>
-                  </Popover>
-                  <FormMessage />
-                </FormItem>
+                    </PopoverTrigger> 
+                    <PopoverContent className="w-auto p-0" align="start"> 
+                      <Calendar 
+                        mode="single" 
+                        selected={field.value && isValid(new Date(field.value)) ? new Date(field.value) : undefined} 
+                        onSelect={(date) => field.onChange(date ? date.toISOString().split('T')[0] : '')} 
+                        initialFocus 
+                        captionLayout="dropdown-buttons"
+                        fromYear={new Date().getFullYear() - 50}
+                        toYear={new Date().getFullYear()}
+                      /> 
+                    </PopoverContent> 
+                  </Popover> 
+                  <FormMessage /> 
+                </FormItem> 
               )} />
             </div>
 
@@ -466,3 +475,5 @@ export function PatientForm() {
     </Card>
   );
 }
+
+    
