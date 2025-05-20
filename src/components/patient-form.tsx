@@ -15,6 +15,12 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import {
   Form,
   FormControl,
   FormDescription,
@@ -27,9 +33,9 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription as ShadcnCard
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
 import { usePatientData } from '@/hooks/use-patient-data';
-import { Save, CheckCircle, Edit3 } from 'lucide-react';
+import { Save, CheckCircle, Edit3, CalendarIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { format as formatDateFns, parse as parseDateFns, isValid as isValidDateFns } from 'date-fns';
+import { format, parse as parseDateFns, isValid as isValidDateFns } from 'date-fns';
 import { useState, useEffect } from 'react';
 
 const SectionTitle: React.FC<{ title: string; className?: string }> = ({ title, className }) => (
@@ -39,36 +45,6 @@ const SectionTitle: React.FC<{ title: string; className?: string }> = ({ title, 
 const SubSectionTitle: React.FC<{ title: string; className?: string }> = ({ title, className }) => (
   <h3 className={cn("text-lg font-medium text-foreground mt-4 mb-2", className)}>{title}</h3>
 );
-
-// Date helper functions
-function toMmDdYyyy(isoOrYyyyMmDd: string | null | undefined): string {
-  if (!isoOrYyyyMmDd) return '';
-  // Try parsing as YYYY-MM-DD first (our internal/storage format)
-  let date = parseDateFns(isoOrYyyyMmDd, 'yyyy-MM-dd', new Date());
-  if (isValidDateFns(date)) {
-    return formatDateFns(date, 'MM/dd/yyyy');
-  }
-  // Fallback: try parsing as a more general date string (e.g. full ISO)
-  date = new Date(isoOrYyyyMmDd);
-  if (isValidDateFns(date)) {
-    return formatDateFns(date, 'MM/dd/yyyy');
-  }
-  return isoOrYyyyMmDd; // Return original if not parsable as expected
-}
-
-function fromMmDdYyyyToYyyyMmDd(mmDdYyyy: string): string {
-  if (!mmDdYyyy) return '';
-  const date = parseDateFns(mmDdYyyy, 'MM/dd/yyyy', new Date());
-  if (isValidDateFns(date)) {
-    return formatDateFns(date, 'yyyy-MM-dd');
-  }
-  // If it's already YYYY-MM-DD (e.g., from autofill or corrected input)
-  if (/^\d{4}-\d{2}-\d{2}$/.test(mmDdYyyy) && isValidDateFns(parseDateFns(mmDdYyyy, 'yyyy-MM-dd', new Date()))) {
-    return mmDdYyyy;
-  }
-  return mmDdYyyy; // Return original to let Zod catch the error
-}
-
 
 export function PatientForm() {
   const { toast } = useToast();
@@ -81,7 +57,7 @@ export function PatientForm() {
       firstName: "",
       middleName: "",
       lastName: "",
-      dateOfBirth: "", // Stored as YYYY-MM-DD
+      dateOfBirth: "", 
       gender: undefined,
       mobileNo: "",
       email: "",
@@ -93,13 +69,13 @@ export function PatientForm() {
       officeNo: "",
       dentalInsurance: "",
       faxNo: "",
-      effectiveDate: "", // Stored as YYYY-MM-DD
+      effectiveDate: "", 
       referredBy: "",
       guardianEmail: "",
       parentOrGuardianName: "",
       parentOrGuardianOccupation: "",
       previousDentist: "",
-      lastDentalVisit: "", // Stored as YYYY-MM-DD
+      lastDentalVisit: "", 
       physicianName: "",
       physicianSpecialty: "",
       physicianOfficeAddress: "",
@@ -176,10 +152,10 @@ export function PatientForm() {
   const watchCondOthers = form.watch("cond_others");
 
   const [isMinor, setIsMinor] = useState(false);
-  const dob = form.watch("dateOfBirth"); // This will be YYYY-MM-DD
+  const dob = form.watch("dateOfBirth"); 
 
   useEffect(() => {
-    if (dob && /^\d{4}-\d{2}-\d{2}$/.test(dob)) { // Check if dob is in YYYY-MM-DD format
+    if (dob && /^\d{4}-\d{2}-\d{2}$/.test(dob)) { 
       try {
         const birthDate = parseDateFns(dob, 'yyyy-MM-dd', new Date());
         if (isValidDateFns(birthDate)) {
@@ -204,7 +180,14 @@ export function PatientForm() {
 
   async function onSubmit(data: PatientFormData) {
     try {
-      await addPatient(data);
+      // Ensure date fields are correctly formatted as YYYY-MM-DD or null
+      const processedData = {
+        ...data,
+        dateOfBirth: data.dateOfBirth ? data.dateOfBirth : "", // Should already be YYYY-MM-DD from calendar
+        effectiveDate: data.effectiveDate ? data.effectiveDate : null,
+        lastDentalVisit: data.lastDentalVisit ? data.lastDentalVisit : null,
+      };
+      await addPatient(processedData);
       toast({
         title: "Form Submitted",
         description: "Your medical information has been successfully submitted.",
@@ -224,7 +207,7 @@ export function PatientForm() {
 
   const handleNewSubmission = () => {
     setIsSubmittedSuccessfully(false);
-    form.reset();
+    form.reset(); // Resets to defaultValues
   };
 
   const conditionChecklistItems = [
@@ -285,24 +268,53 @@ export function PatientForm() {
               <FormField control={form.control} name="firstName" render={({ field }) => ( <FormItem> <FormLabel>First Name *</FormLabel> <FormControl><Input placeholder="John" {...field} /></FormControl> <FormMessage /> </FormItem> )} />
               <FormField control={form.control} name="lastName" render={({ field }) => ( <FormItem> <FormLabel>Last Name *</FormLabel> <FormControl><Input placeholder="Doe" {...field} /></FormControl> <FormMessage /> </FormItem> )} />
               <FormField control={form.control} name="middleName" render={({ field }) => ( <FormItem> <FormLabel>Middle Name</FormLabel> <FormControl><Input placeholder="Michael" {...field} value={field.value || ""} /></FormControl> <FormMessage /> </FormItem> )} />
-              <FormField control={form.control} name="dateOfBirth" render={({ field }) => ( 
-                <FormItem> 
-                  <FormLabel>Date of Birth *</FormLabel> 
-                  <FormControl>
-                    <Input 
-                      placeholder="MM/DD/YYYY" 
-                      {...field}
-                      value={toMmDdYyyy(field.value)}
-                      onChange={(e) => field.onChange(e.target.value)} 
-                      onBlur={(e) => {
-                        const yyyyMmDd = fromMmDdYyyyToYyyyMmDd(e.target.value);
-                        field.onChange(yyyyMmDd); 
-                      }}
-                    />
-                  </FormControl> 
-                  <FormMessage /> 
-                </FormItem> 
-              )} />
+              
+              <FormField
+                control={form.control}
+                name="dateOfBirth"
+                render={({ field }) => (
+                  <FormItem className="flex flex-col">
+                    <FormLabel>Date of Birth *</FormLabel>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button
+                          ref={field.ref}
+                          variant={"outline"}
+                          className={cn(
+                            "w-full pl-3 text-left font-normal",
+                            !field.value && "text-muted-foreground"
+                          )}
+                        >
+                          <span className="flex items-center justify-between w-full">
+                            <span>
+                              {field.value && isValidDateFns(parseDateFns(field.value, 'yyyy-MM-dd', new Date()))
+                                ? format(parseDateFns(field.value, 'yyyy-MM-dd', new Date()), "PPP")
+                                : "Pick a date"}
+                            </span>
+                            <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                          </span>
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start">
+                        <Calendar
+                          mode="single"
+                          selected={field.value ? parseDateFns(field.value, 'yyyy-MM-dd', new Date()) : undefined}
+                          onSelect={(date) => field.onChange(date ? format(date, "yyyy-MM-dd") : '')}
+                          disabled={(date) =>
+                            date > new Date() || date < new Date("1900-01-01")
+                          }
+                          initialFocus
+                          captionLayout="dropdown-buttons"
+                          fromYear={1900}
+                          toYear={new Date().getFullYear()}
+                        />
+                      </PopoverContent>
+                    </Popover>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
               <FormField control={form.control} name="gender" render={({ field }) => ( <FormItem> <FormLabel>Gender *</FormLabel> <Select onValueChange={field.onChange} value={field.value}> <FormControl><SelectTrigger><SelectValue placeholder="Select gender" /></SelectTrigger></FormControl> <SelectContent> <SelectItem value="male">Male</SelectItem> <SelectItem value="female">Female</SelectItem> <SelectItem value="other">Other</SelectItem> <SelectItem value="prefer_not_to_say">Prefer not to say</SelectItem> </SelectContent> </Select> <FormMessage /> </FormItem> )} />
               <FormField control={form.control} name="mobileNo" render={({ field }) => ( <FormItem> <FormLabel>Mobile No. *</FormLabel> <FormControl><Input type="tel" placeholder="(123) 456-7890" {...field} /></FormControl> <FormMessage /> </FormItem> )} />
               <FormField control={form.control} name="email" render={({ field }) => ( <FormItem> <FormLabel>Email Address *</FormLabel> <FormControl><Input type="email" placeholder="john.doe@example.com" {...field} /></FormControl> <FormMessage /> </FormItem> )} />
@@ -314,24 +326,49 @@ export function PatientForm() {
               <FormField control={form.control} name="officeNo" render={({ field }) => ( <FormItem> <FormLabel>Office No.</FormLabel> <FormControl><Input type="tel" {...field} value={field.value || ""} /></FormControl> <FormMessage /> </FormItem> )} />
               <FormField control={form.control} name="dentalInsurance" render={({ field }) => ( <FormItem> <FormLabel>Dental Insurance</FormLabel> <FormControl><Input {...field} value={field.value || ""} /></FormControl> <FormMessage /> </FormItem> )} />
               <FormField control={form.control} name="faxNo" render={({ field }) => ( <FormItem> <FormLabel>Fax No.</FormLabel> <FormControl><Input type="tel" {...field} value={field.value || ""} /></FormControl> <FormMessage /> </FormItem> )} />
-              <FormField control={form.control} name="effectiveDate" render={({ field }) => ( 
-                <FormItem> 
-                  <FormLabel>Effective Date (Insurance)</FormLabel> 
-                  <FormControl>
-                    <Input 
-                      placeholder="MM/DD/YYYY" 
-                      {...field}
-                      value={toMmDdYyyy(field.value)}
-                      onChange={(e) => field.onChange(e.target.value)}
-                      onBlur={(e) => {
-                        const yyyyMmDd = fromMmDdYyyyToYyyyMmDd(e.target.value);
-                        field.onChange(yyyyMmDd);
-                      }}
-                    />
-                  </FormControl> 
-                  <FormMessage /> 
-                </FormItem> 
-              )} />
+              
+              <FormField
+                control={form.control}
+                name="effectiveDate"
+                render={({ field }) => (
+                  <FormItem className="flex flex-col">
+                    <FormLabel>Effective Date (Insurance)</FormLabel>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                         <Button
+                          ref={field.ref}
+                          variant={"outline"}
+                          className={cn(
+                            "w-full pl-3 text-left font-normal",
+                            !field.value && "text-muted-foreground"
+                          )}
+                        >
+                          <span className="flex items-center justify-between w-full">
+                            <span>
+                              {field.value && isValidDateFns(parseDateFns(field.value, 'yyyy-MM-dd', new Date()))
+                                ? format(parseDateFns(field.value, 'yyyy-MM-dd', new Date()), "PPP")
+                                : "Pick a date"}
+                            </span>
+                            <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                          </span>
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start">
+                        <Calendar
+                          mode="single"
+                          selected={field.value ? parseDateFns(field.value, 'yyyy-MM-dd', new Date()) : undefined}
+                          onSelect={(date) => field.onChange(date ? format(date, "yyyy-MM-dd") : '')}
+                          initialFocus
+                          captionLayout="dropdown-buttons"
+                          fromYear={new Date().getFullYear() - 10}
+                          toYear={new Date().getFullYear() + 10}
+                        />
+                      </PopoverContent>
+                    </Popover>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
               <FormField control={form.control} name="referredBy" render={({ field }) => ( <FormItem className="md:col-span-2"> <FormLabel>Whom may we thank for referring you?</FormLabel> <FormControl><Input {...field} value={field.value || ""} /></FormControl> <FormMessage /> </FormItem> )} />
             </div>
 
@@ -349,24 +386,48 @@ export function PatientForm() {
             <SectionTitle title="Dental History" />
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <FormField control={form.control} name="previousDentist" render={({ field }) => ( <FormItem> <FormLabel>Previous Dentist (Dr.)</FormLabel> <FormControl><Input {...field} value={field.value || ""} /></FormControl> <FormMessage /> </FormItem> )} />
-              <FormField control={form.control} name="lastDentalVisit" render={({ field }) => ( 
-                <FormItem> 
-                  <FormLabel>Last Dental Visit</FormLabel> 
-                  <FormControl>
-                    <Input 
-                      placeholder="MM/DD/YYYY" 
-                      {...field}
-                      value={toMmDdYyyy(field.value)}
-                      onChange={(e) => field.onChange(e.target.value)}
-                      onBlur={(e) => {
-                        const yyyyMmDd = fromMmDdYyyyToYyyyMmDd(e.target.value);
-                        field.onChange(yyyyMmDd);
-                      }}
-                    />
-                  </FormControl> 
-                  <FormMessage /> 
-                </FormItem> 
-              )} />
+              <FormField
+                control={form.control}
+                name="lastDentalVisit"
+                render={({ field }) => (
+                  <FormItem className="flex flex-col">
+                    <FormLabel>Last Dental Visit</FormLabel>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button
+                          ref={field.ref}
+                          variant={"outline"}
+                          className={cn(
+                            "w-full pl-3 text-left font-normal",
+                            !field.value && "text-muted-foreground"
+                          )}
+                        >
+                          <span className="flex items-center justify-between w-full">
+                            <span>
+                              {field.value && isValidDateFns(parseDateFns(field.value, 'yyyy-MM-dd', new Date()))
+                                ? format(parseDateFns(field.value, 'yyyy-MM-dd', new Date()), "PPP")
+                                : "Pick a date"}
+                            </span>
+                            <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                          </span>
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start">
+                        <Calendar
+                          mode="single"
+                          selected={field.value ? parseDateFns(field.value, 'yyyy-MM-dd', new Date()) : undefined}
+                          onSelect={(date) => field.onChange(date ? format(date, "yyyy-MM-dd") : '')}
+                          initialFocus
+                          captionLayout="dropdown-buttons"
+                          fromYear={new Date().getFullYear() - 50}
+                          toYear={new Date().getFullYear()}
+                        />
+                      </PopoverContent>
+                    </Popover>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
             </div>
 
             <SectionTitle title="Medical History" />
@@ -452,6 +513,3 @@ export function PatientForm() {
     </Card>
   );
 }
-    
-
-    

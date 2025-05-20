@@ -1,40 +1,24 @@
 
 import { z } from 'zod';
-import { format as formatDateFns, parse as parseDateFns, isValid as isValidDateFns } from 'date-fns';
+import { parse as parseDateFns, isValid as isValidDateFns, format as formatDateFns } from 'date-fns';
 
-// Helper for date validation and transformation (MM/DD/YYYY input -> YYYY-MM-DD store)
+// Helper for date validation (expects YYYY-MM-DD from calendar)
 const dateSchema = (fieldName: string, isRequired: boolean = true) => {
-  let schema = z.string();
+  let schema = z.string().refine(val => {
+    if (!val && !isRequired) return true; // Allow empty string for optional fields before further validation
+    if (!val && isRequired) return false; // Fail if required and empty
+    return /^\d{4}-\d{2}-\d{2}$/.test(val) && isValidDateFns(parseDateFns(val, 'yyyy-MM-dd', new Date()));
+  }, { message: `Invalid ${fieldName.toLowerCase()} format. Expected YYYY-MM-DD from calendar.` });
 
   if (isRequired) {
-    schema = schema.min(1, { message: `${fieldName} is required.` });
+    schema = schema.min(1, { message: `${fieldName} is required.` }) as unknown as z.ZodString; // Cast needed after refine
   }
-
+  
+  // Ensure empty strings become null for optional fields, otherwise keep the valid YYYY-MM-DD string
   return schema
     .optional()
     .nullable()
-    .refine(val => {
-      if (val === null || val === undefined || val === "") return !isRequired; // Allow empty if not required
-      // Check for MM/DD/YYYY format
-      if (!/^\d{1,2}\/\d{1,2}\/\d{4}$/.test(val) && !/^\d{4}-\d{2}-\d{2}$/.test(val)) return false;
-      
-      const dateToParse = /^\d{4}-\d{2}-\d{2}$/.test(val) ? val : val; // If YYYY-MM-DD, parse as such
-      const formatToUse = /^\d{4}-\d{2}-\d{2}$/.test(val) ? 'yyyy-MM-dd' : 'MM/dd/yyyy';
-      
-      const date = parseDateFns(dateToParse, formatToUse, new Date());
-      return isValidDateFns(date);
-    }, { message: `Invalid ${fieldName.toLowerCase()}. Please use MM/DD/YYYY format.` })
-    .transform(val => {
-      if (val === null || val === undefined || val === "") return null; // Keep null/empty as is for optional
-      
-      const formatToUse = /^\d{4}-\d{2}-\d{2}$/.test(val) ? 'yyyy-MM-dd' : 'MM/dd/yyyy';
-      const date = parseDateFns(val, formatToUse, new Date());
-      
-      if (isValidDateFns(date)) {
-        return formatDateFns(date, "yyyy-MM-dd");
-      }
-      return val; // Return original if transform fails, refine should have caught it
-    });
+    .transform(val => (val === "" || val === undefined) ? null : val); 
 };
 
 
@@ -44,12 +28,18 @@ export const patientFormSchema = z.object({
   middleName: z.string().max(50).optional().nullable(),
   lastName: z.string().min(1, { message: "Last name is required." }).max(50),
   
-  dateOfBirth: dateSchema("Date of Birth", true)
-    .refine(val => { // Additional check for dateOfBirth specific logic
-      if (!val) return false; // Already YYYY-MM-DD or null from transform
+  dateOfBirth: z.string()
+    .min(1, { message: "Date of Birth is required." })
+    .refine(val => { 
+      if (!val) return false; 
+      return /^\d{4}-\d{2}-\d{2}$/.test(val) && isValidDateFns(parseDateFns(val, 'yyyy-MM-dd', new Date()));
+    }, { message: "Invalid Date of Birth format. Expected YYYY-MM-DD from calendar."})
+    .refine(val => { 
       const date = parseDateFns(val, 'yyyy-MM-dd', new Date());
-      return date <= new Date() && date >= new Date("1900-01-01");
-    }, "Date of birth must be valid and not in the future, and after 1900."),
+      return isValidDateFns(date) && date <= new Date() && date >= new Date("1900-01-01");
+    }, "Date of birth must be a valid date, not in the future, and after Jan 1, 1900.")
+    .transform(val => (val === "" || val === undefined) ? null : val) // Keep null transform for consistency, though min(1) makes it unlikely
+    .nullable(), // Allow null for transform consistency, but min(1) above handles requirement
 
   gender: z.enum(['male', 'female', 'other', 'prefer_not_to_say'], { required_error: "Please select a gender." }),
   mobileNo: z.string().min(10, { message: "Mobile number must be at least 10 digits." }).max(15),
@@ -163,4 +153,3 @@ export const loginFormSchema = z.object({
 });
 
 export type LoginFormData = z.infer<typeof loginFormSchema>;
-
