@@ -13,26 +13,59 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { FilePenLine, Info, Search } from 'lucide-react';
+import { FilePenLine, Info, Search, Trash2 } from 'lucide-react';
 import { useState, useMemo } from 'react';
 import { EditPatientDialog } from './edit-patient-dialog';
 import { usePatientData } from '@/hooks/use-patient-data';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { useToast } from "@/hooks/use-toast";
+
 
 interface PatientDataProps {
   // patients prop can be removed if usePatientData is used directly
 }
 
 export function PatientDataTable({}: PatientDataProps) {
-  const { patients, updatePatient, isLoading } = usePatientData();
+  const { patients, updatePatient, deletePatient, isLoading } = usePatientData();
+  const { toast } = useToast();
   const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
+  const [patientToDelete, setPatientToDelete] = useState<Patient | null>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState<string>("");
 
   const handleEdit = (patient: Patient) => {
     setSelectedPatient(patient);
     setIsEditDialogOpen(true);
+  };
+
+  const handleOpenDeleteDialog = (patient: Patient) => {
+    setPatientToDelete(patient);
+    setIsDeleteDialogOpen(true);
+  };
+
+  const handleConfirmDelete = () => {
+    if (patientToDelete) {
+      deletePatient(patientToDelete.id);
+      toast({
+        title: "Patient Record Deleted",
+        description: `${patientToDelete.fullName}'s record has been successfully deleted.`,
+      });
+      setIsDeleteDialogOpen(false);
+      setPatientToDelete(null);
+    }
   };
 
   const handleSavePatient = (updatedPatient: Patient) => {
@@ -75,7 +108,7 @@ export function PatientDataTable({}: PatientDataProps) {
         <CardHeader>
           <CardTitle>Patient Records</CardTitle>
           <CardDescription>
-            A list of all submitted patient medical forms. Click 'Edit' to update information.
+            A list of all submitted patient medical forms. Click 'Edit' to update information or 'Delete' to remove a record.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -131,9 +164,12 @@ export function PatientDataTable({}: PatientDataProps) {
                       <TableCell className="hidden sm:table-cell">
                         {new Date(patient.submissionDate).toLocaleDateString()}
                       </TableCell>
-                      <TableCell className="text-right">
+                      <TableCell className="text-right space-x-2">
                         <Button variant="outline" size="sm" onClick={() => handleEdit(patient)}>
                           <FilePenLine className="mr-2 h-4 w-4" /> Edit
+                        </Button>
+                        <Button variant="destructive" size="sm" onClick={() => handleOpenDeleteDialog(patient)}>
+                          <Trash2 className="mr-2 h-4 w-4" /> Delete
                         </Button>
                       </TableCell>
                     </TableRow>
@@ -150,6 +186,24 @@ export function PatientDataTable({}: PatientDataProps) {
         onOpenChange={setIsEditDialogOpen}
         onSave={handleSavePatient}
       />
+      {patientToDelete && (
+        <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+              <AlertDialogDescription>
+                This action cannot be undone. This will permanently delete the patient record for <strong>{patientToDelete.fullName}</strong>.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel onClick={() => setPatientToDelete(null)}>Cancel</AlertDialogCancel>
+              <AlertDialogAction onClick={handleConfirmDelete}>
+                Delete
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      )}
     </>
   );
 }

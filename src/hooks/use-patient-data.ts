@@ -51,9 +51,15 @@ export function usePatientData() {
     );
   }, []);
 
+  const deletePatient = useCallback((patientId: string) => {
+    setPatients((prevPatients) =>
+      prevPatients.filter((p) => p.id !== patientId)
+    );
+  }, []);
+
   const getPatientById = useCallback((id: string): Patient | undefined => {
     return patients.find(p => p.id === id);
   }, [patients]);
 
-  return { patients, addPatient, updatePatient, getPatientById, isLoading };
+  return { patients, addPatient, updatePatient, deletePatient, getPatientById, isLoading };
 }
