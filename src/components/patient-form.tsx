@@ -15,12 +15,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import { Calendar } from "@/components/ui/calendar";
-import {
   Form,
   FormControl,
   FormDescription,
@@ -37,6 +31,8 @@ import { Save, CheckCircle, Edit3, CalendarIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { format as formatDateFns, parse as parseDateFns, isValid as isValidDateFns } from 'date-fns';
 import { useState, useEffect } from 'react';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar } from '@/components/ui/calendar';
 
 const SectionTitle: React.FC<{ title: string; className?: string }> = ({ title, className }) => (
   <h2 className={cn("text-xl font-semibold text-primary mt-6 mb-3 pb-2 border-b", className)}>{title}</h2>
@@ -58,10 +54,9 @@ const BLOOD_TYPES = [
 ] as const;
 
 const RELIGIONS = [
-  "Christianity", "Islam", "Hinduism", "Buddhism", "Judaism", 
-  "Sikhism", "Bahá'í Faith", "Jainism", "Shinto", "Taoism",
-  "Agnostic", "Atheist", "Spiritual but not religious", 
-  "Other", "Prefer not to say"
+  "Agnostic", "Atheist", "Bahá'í Faith", "Buddhism", "Catholicism", "Christianity", 
+  "Hinduism", "Islam", "Jainism", "Judaism", "Shinto", "Sikhism", "Spiritual but not religious", 
+  "Taoism", "Other", "Prefer not to say"
 ] as const;
 
 const NATIONALITIES = [
@@ -229,9 +224,9 @@ export function PatientForm() {
     try {
       const processedData = {
         ...data,
-        dateOfBirth: data.dateOfBirth ? data.dateOfBirth : "", // Keep as YYYY-MM-DD string
-        effectiveDate: data.effectiveDate ? data.effectiveDate : null, // Keep as YYYY-MM-DD string or null
-        lastDentalVisit: data.lastDentalVisit ? data.lastDentalVisit : null, // Keep as YYYY-MM-DD string or null
+        dateOfBirth: data.dateOfBirth ? data.dateOfBirth : "", 
+        effectiveDate: data.effectiveDate ? data.effectiveDate : null, 
+        lastDentalVisit: data.lastDentalVisit ? data.lastDentalVisit : null, 
         physicianSpecialtyOther: data.physicianSpecialty === 'other' ? data.physicianSpecialtyOther : "",
         bloodTypeOther: data.bloodType === 'other' ? data.bloodTypeOther : "",
       };
@@ -317,7 +312,7 @@ export function PatientForm() {
               <FormField control={form.control} name="lastName" render={({ field }) => ( <FormItem> <FormLabel>Last Name *</FormLabel> <FormControl><Input placeholder="Doe" {...field} /></FormControl> <FormMessage /> </FormItem> )} />
               <FormField control={form.control} name="middleName" render={({ field }) => ( <FormItem> <FormLabel>Middle Name</FormLabel> <FormControl><Input placeholder="Michael" {...field} value={field.value || ""} /></FormControl> <FormMessage /> </FormItem> )} />
 
-               <FormField
+              <FormField
                 control={form.control}
                 name="dateOfBirth"
                 render={({ field }) => (
@@ -412,13 +407,13 @@ export function PatientForm() {
                     <Popover>
                       <PopoverTrigger asChild>
                          <Button
-                          ref={field.ref}
-                          variant={"outline"}
-                          className={cn(
-                            "w-full pl-3 text-left font-normal",
-                            !field.value && "text-muted-foreground"
-                          )}
-                        >
+                            ref={field.ref}
+                            variant={"outline"}
+                            className={cn(
+                              "w-full pl-3 text-left font-normal",
+                              !field.value && "text-muted-foreground"
+                            )}
+                          >
                           <span className="flex items-center justify-between w-full">
                             <span>
                               {field.value && isValidDateFns(parseDateFns(field.value, 'yyyy-MM-dd', new Date()))
@@ -633,5 +628,3 @@ export function PatientForm() {
     </Card>
   );
 }
-
-    

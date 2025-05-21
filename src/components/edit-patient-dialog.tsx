@@ -69,10 +69,9 @@ const BLOOD_TYPES = [
 ] as const;
 
 const RELIGIONS = [
-  "Christianity", "Islam", "Hinduism", "Buddhism", "Judaism", 
-  "Sikhism", "Bahá'í Faith", "Jainism", "Shinto", "Taoism",
-  "Agnostic", "Atheist", "Spiritual but not religious", 
-  "Other", "Prefer not to say"
+  "Agnostic", "Atheist", "Bahá'í Faith", "Buddhism", "Catholicism", "Christianity", 
+  "Hinduism", "Islam", "Jainism", "Judaism", "Shinto", "Sikhism", "Spiritual but not religious", 
+  "Taoism", "Other", "Prefer not to say"
 ] as const;
 
 const NATIONALITIES = [
@@ -266,7 +265,7 @@ export function EditPatientDialog({ patient, isOpen, onOpenChange, onSave }: Edi
         ...patient,
         ...data,
         fullName: constructedFullName,
-        submissionDate: patient.submissionDate, // Keep original submission date
+        submissionDate: patient.submissionDate, 
         dateOfBirth: data.dateOfBirth ? data.dateOfBirth : "", 
         effectiveDate: data.effectiveDate ? data.effectiveDate : null,
         lastDentalVisit: data.lastDentalVisit ? data.lastDentalVisit : null,
@@ -624,15 +623,20 @@ export function EditPatientDialog({ patient, isOpen, onOpenChange, onSave }: Edi
             <Separator className="my-8" />
             <FormField control={form.control} name="reasonForVisit" render={({ field }) => ( <FormItem> <FormLabel>Primary Reason for This Visit / Chief Complaint *</FormLabel> <FormControl><Textarea placeholder="e.g., Routine check-up, toothache, etc." {...field} /></FormControl> <FormMessage /> </FormItem> )} />
 
-            <Button type="submit" className="w-full mt-8" disabled={form.formState.isSubmitting}>
-              <Save className="mr-2 h-4 w-4" />
-              {form.formState.isSubmitting ? "Submitting..." : "Submit Information"}
-            </Button>
+            <DialogFooter className="pt-4">
+               <DialogClose asChild>
+                <Button type="button" variant="outline">
+                  <X className="mr-2 h-4 w-4" /> Cancel
+                </Button>
+              </DialogClose>
+              <Button type="submit" disabled={form.formState.isSubmitting}>
+                <Save className="mr-2 h-4 w-4" />
+                {form.formState.isSubmitting ? "Saving..." : "Save Changes"}
+              </Button>
+            </DialogFooter>
           </form>
         </Form>
-      </CardContent>
-    </Card>
+      </DialogContent>
+    </Dialog>
   );
 }
-
-    
