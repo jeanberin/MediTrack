@@ -54,19 +54,33 @@ const BLOOD_TYPES = [
 ] as const;
 
 const RELIGIONS = [
-  "Agnostic", "Atheist", "Bahá'í Faith", "Buddhism", "Catholicism", "Christianity", 
-  "Hinduism", "Islam", "Jainism", "Judaism", "Shinto", "Sikhism", "Spiritual but not religious", 
-  "Taoism", "Other", "Prefer not to say"
+  "Roman Catholic",
+  "Agnostic",
+  "Atheist",
+  "Bahá'í Faith",
+  "Buddhism",
+  "Christianity",
+  "Hinduism",
+  "Islam",
+  "Jainism",
+  "Judaism",
+  "Shinto",
+  "Sikhism",
+  "Spiritual but not religious",
+  "Taoism",
+  "Other",
+  "Prefer not to say"
 ] as const;
 
 const NATIONALITIES = [
+  "Filipino",
   "Afghan", "Albanian", "Algerian", "American", "Andorran", "Angolan", "Argentine", "Armenian", "Australian", "Austrian",
   "Azerbaijani", "Bahamian", "Bahraini", "Bangladeshi", "Barbadian", "Belarusian", "Belgian", "Belizean", "Beninese", "Bhutanese",
   "Bolivian", "Bosnian", "Botswanan", "Brazilian", "British", "Bruneian", "Bulgarian", "Burkinabe", "Burmese", "Burundian",
   "Cambodian", "Cameroonian", "Canadian", "Cape Verdean", "Central African", "Chadian", "Chilean", "Chinese", "Colombian", "Comoran",
   "Congolese (Congo-Brazzaville)", "Congolese (Congo-Kinshasa)", "Costa Rican", "Croatian", "Cuban", "Cypriot", "Czech", "Danish",
   "Djiboutian", "Dominican (Dominica)", "Dominican (Dominican Republic)", "Dutch", "East Timorese", "Ecuadorean", "Egyptian",
-  "Emirati", "Equatorial Guinean", "Eritrean", "Estonian", "Ethiopian", "Fijian", "Filipino", "Finnish", "French", "Gabonese",
+  "Emirati", "Equatorial Guinean", "Eritrean", "Estonian", "Ethiopian", "Fijian", "Finnish", "French", "Gabonese",
   "Gambian", "Georgian", "German", "Ghanaian", "Greek", "Grenadian", "Guatemalan", "Guinean", "Guinean-Bissauan", "Guyanese",
   "Haitian", "Honduran", "Hungarian", "Icelandic", "Indian", "Indonesian", "Iranian", "Iraqi", "Irish", "Israeli", "Italian",
   "Ivorian", "Jamaican", "Japanese", "Jordanian", "Kazakhstani", "Kenyan", "Kittian and Nevisian", "Kuwaiti", "Kyrgyz", "Laotian",
@@ -319,25 +333,25 @@ export function PatientForm() {
                   <FormItem className="flex flex-col">
                     <FormLabel>Date of Birth *</FormLabel>
                     <Popover>
-                      <PopoverTrigger asChild>
-                        <Button
-                          ref={field.ref}
-                          variant={"outline"}
-                          className={cn(
-                            "w-full pl-3 text-left font-normal",
-                            !field.value && "text-muted-foreground"
-                          )}
-                        >
-                          <span className="flex items-center justify-between w-full">
-                            <span>
-                              {field.value && isValidDateFns(parseDateFns(field.value, 'yyyy-MM-dd', new Date()))
-                                ? formatDateFns(parseDateFns(field.value, 'yyyy-MM-dd', new Date()), "PPP")
-                                : "Pick a date"}
+                        <PopoverTrigger asChild>
+                          <Button
+                            ref={field.ref}
+                            variant={"outline"}
+                            className={cn(
+                              "w-full pl-3 text-left font-normal",
+                              !field.value && "text-muted-foreground"
+                            )}
+                          >
+                            <span className="flex items-center justify-between w-full">
+                              <span>
+                                {field.value && isValidDateFns(parseDateFns(field.value, 'yyyy-MM-dd', new Date()))
+                                  ? formatDateFns(parseDateFns(field.value, 'yyyy-MM-dd', new Date()), "PPP")
+                                  : "Pick a date"}
+                              </span>
+                              <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
                             </span>
-                            <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                          </span>
-                        </Button>
-                      </PopoverTrigger>
+                          </Button>
+                        </PopoverTrigger>
                       <PopoverContent className="w-auto p-0" align="start">
                         <Calendar
                           mode="single"
@@ -382,7 +396,7 @@ export function PatientForm() {
                   <FormLabel>Nationality</FormLabel>
                   <Select onValueChange={field.onChange} value={field.value || ""}>
                     <FormControl><SelectTrigger><SelectValue placeholder="Select nationality" /></SelectTrigger></FormControl>
-                    <SelectContent className="max-h-60"> {/* Added for long list */}
+                    <SelectContent className="max-h-60">
                       {NATIONALITIES.map(nationality => (
                         <SelectItem key={nationality} value={nationality}>{nationality}</SelectItem>
                       ))}
@@ -405,25 +419,25 @@ export function PatientForm() {
                   <FormItem className="flex flex-col">
                     <FormLabel>Effective Date (Insurance)</FormLabel>
                     <Popover>
-                      <PopoverTrigger asChild>
-                         <Button
-                            ref={field.ref}
-                            variant={"outline"}
-                            className={cn(
-                              "w-full pl-3 text-left font-normal",
-                              !field.value && "text-muted-foreground"
-                            )}
-                          >
-                          <span className="flex items-center justify-between w-full">
-                            <span>
-                              {field.value && isValidDateFns(parseDateFns(field.value, 'yyyy-MM-dd', new Date()))
-                                ? formatDateFns(parseDateFns(field.value, 'yyyy-MM-dd', new Date()), "PPP")
-                                : "Pick a date"}
+                        <PopoverTrigger asChild>
+                           <Button
+                              ref={field.ref}
+                              variant={"outline"}
+                              className={cn(
+                                "w-full pl-3 text-left font-normal",
+                                !field.value && "text-muted-foreground"
+                              )}
+                            >
+                            <span className="flex items-center justify-between w-full">
+                              <span>
+                                {field.value && isValidDateFns(parseDateFns(field.value, 'yyyy-MM-dd', new Date()))
+                                  ? formatDateFns(parseDateFns(field.value, 'yyyy-MM-dd', new Date()), "PPP")
+                                  : "Pick a date"}
+                              </span>
+                              <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
                             </span>
-                            <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                          </span>
-                        </Button>
-                      </PopoverTrigger>
+                          </Button>
+                        </PopoverTrigger>
                       <PopoverContent className="w-auto p-0" align="start">
                         <Calendar
                           mode="single"
@@ -464,25 +478,25 @@ export function PatientForm() {
                   <FormItem className="flex flex-col">
                     <FormLabel>Last Dental Visit</FormLabel>
                     <Popover>
-                      <PopoverTrigger asChild>
-                        <Button
-                          ref={field.ref}
-                          variant={"outline"}
-                          className={cn(
-                            "w-full pl-3 text-left font-normal",
-                            !field.value && "text-muted-foreground"
-                          )}
-                        >
-                          <span className="flex items-center justify-between w-full">
-                            <span>
-                              {field.value && isValidDateFns(parseDateFns(field.value, 'yyyy-MM-dd', new Date()))
-                                ? formatDateFns(parseDateFns(field.value, 'yyyy-MM-dd', new Date()), "PPP")
-                                : "Pick a date"}
+                        <PopoverTrigger asChild>
+                          <Button
+                            ref={field.ref}
+                            variant={"outline"}
+                            className={cn(
+                              "w-full pl-3 text-left font-normal",
+                              !field.value && "text-muted-foreground"
+                            )}
+                          >
+                            <span className="flex items-center justify-between w-full">
+                              <span>
+                                {field.value && isValidDateFns(parseDateFns(field.value, 'yyyy-MM-dd', new Date()))
+                                  ? formatDateFns(parseDateFns(field.value, 'yyyy-MM-dd', new Date()), "PPP")
+                                  : "Pick a date"}
+                              </span>
+                              <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
                             </span>
-                            <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                          </span>
-                        </Button>
-                      </PopoverTrigger>
+                          </Button>
+                        </PopoverTrigger>
                       <PopoverContent className="w-auto p-0" align="start">
                         <Calendar
                           mode="single"

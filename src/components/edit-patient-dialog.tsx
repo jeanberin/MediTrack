@@ -69,19 +69,33 @@ const BLOOD_TYPES = [
 ] as const;
 
 const RELIGIONS = [
-  "Agnostic", "Atheist", "Bahá'í Faith", "Buddhism", "Catholicism", "Christianity", 
-  "Hinduism", "Islam", "Jainism", "Judaism", "Shinto", "Sikhism", "Spiritual but not religious", 
-  "Taoism", "Other", "Prefer not to say"
+  "Roman Catholic",
+  "Agnostic",
+  "Atheist",
+  "Bahá'í Faith",
+  "Buddhism",
+  "Christianity",
+  "Hinduism",
+  "Islam",
+  "Jainism",
+  "Judaism",
+  "Shinto",
+  "Sikhism",
+  "Spiritual but not religious",
+  "Taoism",
+  "Other",
+  "Prefer not to say"
 ] as const;
 
 const NATIONALITIES = [
+  "Filipino",
   "Afghan", "Albanian", "Algerian", "American", "Andorran", "Angolan", "Argentine", "Armenian", "Australian", "Austrian",
   "Azerbaijani", "Bahamian", "Bahraini", "Bangladeshi", "Barbadian", "Belarusian", "Belgian", "Belizean", "Beninese", "Bhutanese",
   "Bolivian", "Bosnian", "Botswanan", "Brazilian", "British", "Bruneian", "Bulgarian", "Burkinabe", "Burmese", "Burundian",
   "Cambodian", "Cameroonian", "Canadian", "Cape Verdean", "Central African", "Chadian", "Chilean", "Chinese", "Colombian", "Comoran",
   "Congolese (Congo-Brazzaville)", "Congolese (Congo-Kinshasa)", "Costa Rican", "Croatian", "Cuban", "Cypriot", "Czech", "Danish",
   "Djiboutian", "Dominican (Dominica)", "Dominican (Dominican Republic)", "Dutch", "East Timorese", "Ecuadorean", "Egyptian",
-  "Emirati", "Equatorial Guinean", "Eritrean", "Estonian", "Ethiopian", "Fijian", "Filipino", "Finnish", "French", "Gabonese",
+  "Emirati", "Equatorial Guinean", "Eritrean", "Estonian", "Ethiopian", "Fijian", "Finnish", "French", "Gabonese",
   "Gambian", "Georgian", "German", "Ghanaian", "Greek", "Grenadian", "Guatemalan", "Guinean", "Guinean-Bissauan", "Guyanese",
   "Haitian", "Honduran", "Hungarian", "Icelandic", "Indian", "Indonesian", "Iranian", "Iraqi", "Irish", "Israeli", "Italian",
   "Ivorian", "Jamaican", "Japanese", "Jordanian", "Kazakhstani", "Kenyan", "Kittian and Nevisian", "Kuwaiti", "Kyrgyz", "Laotian",
@@ -394,7 +408,7 @@ export function EditPatientDialog({ patient, isOpen, onOpenChange, onSave }: Edi
                   <FormLabel>Nationality</FormLabel>
                   <Select onValueChange={field.onChange} value={field.value || ""}>
                     <FormControl><SelectTrigger><SelectValue placeholder="Select nationality" /></SelectTrigger></FormControl>
-                    <SelectContent className="max-h-60"> {/* Added for long list */}
+                    <SelectContent className="max-h-60">
                       {NATIONALITIES.map(nationality => (
                         <SelectItem key={nationality} value={nationality}>{nationality}</SelectItem>
                       ))}
