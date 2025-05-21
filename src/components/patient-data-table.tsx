@@ -30,7 +30,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
-import { format, isValid } from 'date-fns'; // Import isValid
+import { format as formatDateFns, isValid as isValidDateFns, parseISO } from 'date-fns';
 
 
 interface PatientDataProps {
@@ -83,7 +83,6 @@ export function PatientDataTable({}: PatientDataProps) {
     await updatePatient(updatedPatient);
     setIsEditDialogOpen(false);
     setSelectedPatient(null);
-    // No need to call refetch here if updatePatient optimistically updates or if global state handles it
   };
 
   const filteredPatients = useMemo(() => {
@@ -95,7 +94,7 @@ export function PatientDataTable({}: PatientDataProps) {
     );
   }, [patients, searchTerm]);
 
-  if (isLoading && patients.length === 0 && !isRefetching) { // Show skeleton only on initial load
+  if (isLoading && patients.length === 0 && !isRefetching) { 
     return (
       <Card className="shadow-lg">
         <CardHeader>
@@ -144,7 +143,7 @@ export function PatientDataTable({}: PatientDataProps) {
             </Button>
           </div>
 
-          {(isLoading && patients.length === 0 && !isRefetching) ? ( // Redundant check, but for safety
+          {(isLoading && patients.length === 0 && !isRefetching) ? (
              <div className="flex flex-col items-center justify-center py-12 text-center">
                 <Info className="w-16 h-16 text-muted-foreground mb-4" />
                 <p className="text-xl font-semibold text-muted-foreground">Loading data...</p>
@@ -168,7 +167,7 @@ export function PatientDataTable({}: PatientDataProps) {
                   <TableRow>
                     <TableHead className="w-[200px]">Full Name</TableHead>
                     <TableHead>Date of Birth</TableHead>
-                    <TableHead>Gender</TableHead>
+                    <TableHead>Sex</TableHead>
                     <TableHead className="hidden md:table-cell">Contact Number</TableHead>
                     <TableHead className="hidden lg:table-cell">Email</TableHead>
                     <TableHead className="hidden sm:table-cell">Submission Date</TableHead>
@@ -180,18 +179,18 @@ export function PatientDataTable({}: PatientDataProps) {
                     <TableRow key={patient.id}>
                       <TableCell className="font-medium">{patient.fullName}</TableCell>
                       <TableCell>
-                        {patient.dateOfBirth && isValid(new Date(patient.dateOfBirth)) 
-                          ? format(new Date(patient.dateOfBirth), "PPP") 
+                        {patient.dateOfBirth && isValidDateFns(parseDateFns(patient.dateOfBirth, 'yyyy-MM-dd', new Date())) 
+                          ? formatDateFns(parseDateFns(patient.dateOfBirth, 'yyyy-MM-dd', new Date()), "PPP") 
                           : 'N/A'}
                       </TableCell>
                       <TableCell>
-                        <Badge variant="secondary" className="capitalize">{patient.gender.replace('_', ' ')}</Badge>
+                        <Badge variant="secondary" className="capitalize">{patient.sex}</Badge>
                       </TableCell>
                       <TableCell className="hidden md:table-cell">{patient.mobileNo}</TableCell>
                       <TableCell className="hidden lg:table-cell">{patient.email}</TableCell>
                       <TableCell className="hidden sm:table-cell">
-                         {patient.submissionDate && isValid(new Date(patient.submissionDate))
-                           ? format(new Date(patient.submissionDate), "PPpp")
+                         {patient.submissionDate && isValidDateFns(parseISO(patient.submissionDate))
+                           ? formatDateFns(parseISO(patient.submissionDate), "PPpp")
                            : 'N/A'}
                       </TableCell>
                       <TableCell className="text-right space-x-2">
@@ -237,3 +236,5 @@ export function PatientDataTable({}: PatientDataProps) {
     </>
   );
 }
+
+    

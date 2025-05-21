@@ -4,22 +4,21 @@ import { parse as parseDateFns, isValid as isValidDateFns, format as formatDateF
 
 // Helper for date validation (expects YYYY-MM-DD from calendar)
 const dateSchema = (fieldName: string, isRequired: boolean = true) => {
-  let schema = z.string();
+  let baseSchema = z.string();
 
   if (isRequired) {
-    schema = schema.min(1, { message: `${fieldName} is required.` });
-  } else {
-    // For optional fields, allow empty string to bypass further date validation initially
-    // The transform will convert "" to null. If not an empty string, then validate.
-    schema = schema.optional().nullable().transform(val => (val === "" || val === undefined || val === null) ? null : val);
+    baseSchema = baseSchema.min(1, { message: `${fieldName} is required.` });
   }
 
-  return schema.refine(val => {
-    if (val === null && !isRequired) return true; // null is valid for optional fields
-    if (!val) return !isRequired; // if empty string and not required, valid. If required, invalid.
-
-    return /^\d{4}-\d{2}-\d{2}$/.test(val) && isValidDateFns(parseDateFns(val, 'yyyy-MM-dd', new Date()));
-  }, { message: `Invalid ${fieldName.toLowerCase()} format. Expected YYYY-MM-DD.` });
+  return baseSchema
+    .optional()
+    .nullable()
+    .transform(val => (val === "" || val === undefined || val === null) ? null : val)
+    .refine(val => {
+      if (val === null && !isRequired) return true; // null is valid for optional fields
+      if (!val) return !isRequired; // if empty string and not required, valid. If required, invalid.
+      return /^\d{4}-\d{2}-\d{2}$/.test(val) && isValidDateFns(parseDateFns(val, 'yyyy-MM-dd', new Date()));
+    }, { message: `Invalid ${fieldName.toLowerCase()} format. Expected YYYY-MM-DD.` });
 };
 
 
@@ -41,7 +40,7 @@ export const patientFormSchema = z.object({
     .transform(val => (val === "" || val === undefined) ? null : val)
     .nullable(),
 
-  gender: z.enum(['male', 'female', 'other', 'prefer_not_to_say'], { required_error: "Please select a gender." }),
+  sex: z.enum(['male', 'female'], { required_error: "Please select a sex." }),
   mobileNo: z.string().min(10, { message: "Mobile number must be at least 10 digits." }).max(15),
   email: z.string().email({ message: "Invalid email address." }).max(100),
   address: z.string().min(5, { message: "Address must be at least 5 characters." }).max(200),
@@ -101,7 +100,7 @@ export const patientFormSchema = z.object({
   q_onBirthControl: z.boolean().optional().default(false),
 
   // Vitals
-  bloodType: z.string().max(50).optional().nullable(), // Increased max length
+  bloodType: z.string().max(50).optional().nullable(),
   bloodTypeOther: z.string().max(50).optional().nullable(),
   bloodPressure: z.string().max(20).optional().nullable(),
 
@@ -198,3 +197,6 @@ export const loginFormSchema = z.object({
 });
 
 export type LoginFormData = z.infer<typeof loginFormSchema>;
+
+
+    

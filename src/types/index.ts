@@ -7,7 +7,7 @@ export interface Patient {
   lastName: string;
   fullName: string;
   dateOfBirth: string; // Stored as YYYY-MM-DD string
-  gender: 'male' | 'female' | 'other' | 'prefer_not_to_say';
+  sex: 'male' | 'female';
   mobileNo: string;
   email: string;
   address: string;
@@ -116,3 +116,6 @@ export interface Patient {
   consentGiven: boolean;
   signature: string;
 }
+
+
+    

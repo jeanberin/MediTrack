@@ -70,7 +70,14 @@ const RELIGIONS = [
   "Taoism",
   "Other",
   "Prefer not to say"
-] as const;
+].sort((a, b) => {
+  if (a === "Roman Catholic") return -1;
+  if (b === "Roman Catholic") return 1;
+  if (a === "Other" || a === "Prefer not to say") return 1;
+  if (b === "Other" || b === "Prefer not to say") return -1;
+  return a.localeCompare(b);
+});
+
 
 const NATIONALITIES = [
   "Filipino",
@@ -95,7 +102,13 @@ const NATIONALITIES = [
   "Taiwanese", "Tajik", "Tanzanian", "Thai", "Togolese", "Tongan", "Trinidadian or Tobagonian", "Tunisian", "Turkish", "Tuvaluan",
   "Ugandan", "Ukrainian", "Uruguayan", "Uzbekistani", "Venezuelan", "Vietnamese", "Welsh", "Yemenite", "Zambian", "Zimbabwean",
   "Other"
-] as const;
+].sort((a, b) => {
+  if (a === "Filipino") return -1;
+  if (b === "Filipino") return 1;
+  if (a === "Other") return 1;
+  if (b === "Other") return -1;
+  return a.localeCompare(b);
+});
 
 
 export function PatientForm() {
@@ -110,7 +123,7 @@ export function PatientForm() {
       middleName: "",
       lastName: "",
       dateOfBirth: "", 
-      gender: undefined,
+      sex: undefined,
       mobileNo: "",
       email: "",
       address: "",
@@ -374,7 +387,7 @@ export function PatientForm() {
                 )}
               />
 
-              <FormField control={form.control} name="gender" render={({ field }) => ( <FormItem> <FormLabel>Gender <span className="text-destructive">*</span></FormLabel> <Select onValueChange={field.onChange} value={field.value}> <FormControl><SelectTrigger><SelectValue placeholder="Select gender" /></SelectTrigger></FormControl> <SelectContent> <SelectItem value="male">Male</SelectItem> <SelectItem value="female">Female</SelectItem> <SelectItem value="other">Other</SelectItem> <SelectItem value="prefer_not_to_say">Prefer not to say</SelectItem> </SelectContent> </Select> <FormMessage /> </FormItem> )} />
+              <FormField control={form.control} name="sex" render={({ field }) => ( <FormItem> <FormLabel>Sex <span className="text-destructive">*</span></FormLabel> <Select onValueChange={field.onChange} value={field.value}> <FormControl><SelectTrigger><SelectValue placeholder="Select sex" /></SelectTrigger></FormControl> <SelectContent> <SelectItem value="male">Male</SelectItem> <SelectItem value="female">Female</SelectItem> </SelectContent> </Select> <FormMessage /> </FormItem> )} />
               <FormField control={form.control} name="mobileNo" render={({ field }) => ( <FormItem> <FormLabel>Mobile No. <span className="text-destructive">*</span></FormLabel> <FormControl><Input type="tel" placeholder="(123) 456-7890" {...field} /></FormControl> <FormMessage /> </FormItem> )} />
               <FormField control={form.control} name="email" render={({ field }) => ( <FormItem> <FormLabel>Email Address <span className="text-destructive">*</span></FormLabel> <FormControl><Input type="email" placeholder="john.doe@example.com" {...field} /></FormControl> <FormMessage /> </FormItem> )} />
               <FormField control={form.control} name="address" render={({ field }) => ( <FormItem className="md:col-span-2"> <FormLabel>Address <span className="text-destructive">*</span></FormLabel> <FormControl><Textarea placeholder="123 Main St, Anytown, USA" {...field} /></FormControl> <FormMessage /> </FormItem> )} />
@@ -689,3 +702,5 @@ export function PatientForm() {
     </Card>
   );
 }
+
+    
