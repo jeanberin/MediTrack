@@ -4,21 +4,21 @@ import { parse as parseDateFns, isValid as isValidDateFns, format as formatDateF
 
 // Helper for date validation (expects YYYY-MM-DD from calendar)
 const dateSchema = (fieldName: string, isRequired: boolean = true) => {
-  let schema = z.string().refine(val => {
-    if (!val && !isRequired) return true; // Allow empty string for optional fields before further validation
-    if (!val && isRequired) return false; // Fail if required and empty
-    return /^\d{4}-\d{2}-\d{2}$/.test(val) && isValidDateFns(parseDateFns(val, 'yyyy-MM-dd', new Date()));
-  }, { message: `Invalid ${fieldName.toLowerCase()} format. Expected YYYY-MM-DD from calendar.` });
+  let baseSchema = z.string();
 
   if (isRequired) {
-    schema = schema.min(1, { message: `${fieldName} is required.` }) as unknown as z.ZodString; // Cast needed after refine
+    baseSchema = baseSchema.min(1, { message: `${fieldName} is required.` });
   }
-  
-  // Ensure empty strings become null for optional fields, otherwise keep the valid YYYY-MM-DD string
-  return schema
+
+  return baseSchema
+    .refine(val => {
+      if (!val && !isRequired) return true; // Allow empty string for optional fields before further validation
+      if (!val && isRequired) return false; // Fail if required and empty
+      return /^\d{4}-\d{2}-\d{2}$/.test(val) && isValidDateFns(parseDateFns(val, 'yyyy-MM-dd', new Date()));
+    }, { message: `Invalid ${fieldName.toLowerCase()} format. Expected YYYY-MM-DD from calendar.` })
     .optional()
     .nullable()
-    .transform(val => (val === "" || val === undefined) ? null : val); 
+    .transform(val => (val === "" || val === undefined) ? null : val);
 };
 
 
@@ -27,25 +27,25 @@ export const patientFormSchema = z.object({
   firstName: z.string().min(1, { message: "First name is required." }).max(50),
   middleName: z.string().max(50).optional().nullable(),
   lastName: z.string().min(1, { message: "Last name is required." }).max(50),
-  
+
   dateOfBirth: z.string()
     .min(1, { message: "Date of Birth is required." })
-    .refine(val => { 
-      if (!val) return false; 
+    .refine(val => {
+      if (!val) return false;
       return /^\d{4}-\d{2}-\d{2}$/.test(val) && isValidDateFns(parseDateFns(val, 'yyyy-MM-dd', new Date()));
     }, { message: "Invalid Date of Birth format. Expected YYYY-MM-DD from calendar."})
-    .refine(val => { 
+    .refine(val => {
       const date = parseDateFns(val, 'yyyy-MM-dd', new Date());
       return isValidDateFns(date) && date <= new Date() && date >= new Date("1900-01-01");
     }, "Date of birth must be a valid date, not in the future, and after Jan 1, 1900.")
-    .transform(val => (val === "" || val === undefined) ? null : val) // Keep null transform for consistency, though min(1) makes it unlikely
-    .nullable(), // Allow null for transform consistency, but min(1) above handles requirement
+    .transform(val => (val === "" || val === undefined) ? null : val)
+    .nullable(),
 
   gender: z.enum(['male', 'female', 'other', 'prefer_not_to_say'], { required_error: "Please select a gender." }),
   mobileNo: z.string().min(10, { message: "Mobile number must be at least 10 digits." }).max(15),
   email: z.string().email({ message: "Invalid email address." }).max(100),
   address: z.string().min(5, { message: "Address must be at least 5 characters." }).max(200),
-  
+
   religion: z.string().max(50).optional().nullable(),
   nationality: z.string().max(50).optional().nullable(),
   homeNo: z.string().max(20).optional().nullable(),
@@ -53,7 +53,7 @@ export const patientFormSchema = z.object({
   officeNo: z.string().max(20).optional().nullable(),
   dentalInsurance: z.string().max(100).optional().nullable(),
   faxNo: z.string().max(20).optional().nullable(),
-  
+
   effectiveDate: dateSchema("Effective Date", false),
   referredBy: z.string().max(100).optional().nullable(),
 
@@ -69,6 +69,7 @@ export const patientFormSchema = z.object({
   // Medical History - Physician
   physicianName: z.string().max(100).optional().nullable(),
   physicianSpecialty: z.string().max(100).optional().nullable(),
+  physicianSpecialtyOther: z.string().max(100).optional().nullable(),
   physicianOfficeAddress: z.string().max(200).optional().nullable(),
   physicianOfficeNumber: z.string().max(20).optional().nullable(),
 
@@ -98,9 +99,10 @@ export const patientFormSchema = z.object({
   q_isPregnant: z.boolean().optional().default(false),
   q_isNursing: z.boolean().optional().default(false),
   q_onBirthControl: z.boolean().optional().default(false),
-  
+
   // Vitals
-  bloodType: z.string().max(10).optional().nullable(),
+  bloodType: z.string().max(20).optional().nullable(),
+  bloodTypeOther: z.string().max(50).optional().nullable(),
   bloodPressure: z.string().max(20).optional().nullable(),
 
   // Conditions Checklist
@@ -141,8 +143,23 @@ export const patientFormSchema = z.object({
   cond_stroke: z.boolean().optional().default(false),
   cond_others: z.boolean().optional().default(false),
   cond_others_details: z.string().max(500).optional().nullable(),
-  
+
   reasonForVisit: z.string().min(1, { message: "Reason for visit cannot be empty." }).max(1000),
+}).superRefine((data, ctx) => {
+  if (data.physicianSpecialty === 'other' && (!data.physicianSpecialtyOther || data.physicianSpecialtyOther.trim() === '')) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: 'Please specify other specialty.',
+      path: ['physicianSpecialtyOther'],
+    });
+  }
+  if (data.bloodType === 'other' && (!data.bloodTypeOther || data.bloodTypeOther.trim() === '')) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: 'Please specify other blood type.',
+      path: ['bloodTypeOther'],
+    });
+  }
 });
 
 export type PatientFormData = z.infer<typeof patientFormSchema>;

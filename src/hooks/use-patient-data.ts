@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import type { Patient } from '@/types';
 import type { PatientFormData } from '@/lib/schemas';
-import { isValid } from 'date-fns'; // Import isValid
+import { isValid, parse as parseDateFns, format as formatDateFns } from 'date-fns';
 
 const PATIENTS_STORAGE_KEY = 'mediTrackPatients';
 
@@ -31,6 +31,7 @@ const getDefaultPatientFormData = (): Omit<PatientFormData, 'firstName' | 'lastN
   lastDentalVisit: "",
   physicianName: "",
   physicianSpecialty: "",
+  physicianSpecialtyOther: "",
   physicianOfficeAddress: "",
   physicianOfficeNumber: "",
   q_goodHealth: false,
@@ -55,6 +56,7 @@ const getDefaultPatientFormData = (): Omit<PatientFormData, 'firstName' | 'lastN
   q_isNursing: false,
   q_onBirthControl: false,
   bloodType: "",
+  bloodTypeOther: "",
   bloodPressure: "",
   cond_highBloodPressure: false,
   cond_heartDisease: false,
@@ -95,18 +97,31 @@ const getDefaultPatientFormData = (): Omit<PatientFormData, 'firstName' | 'lastN
   cond_others_details: "",
 });
 
-// Helper function for robust date string formatting for YYYY-MM-DD or null
-const formatToDateInputStringOrNull = (dateInput: any): string | null => {
-  if (dateInput === null || dateInput === undefined || dateInput === "") return null;
-  const date = new Date(dateInput);
-  return isValid(date) ? date.toISOString().split('T')[0] : null;
+const safeFormatToYyyyMmDd = (dateInput: any): string | null => {
+  if (!dateInput) return null;
+  try {
+    const parsedDate = parseDateFns(dateInput, 'yyyy-MM-dd', new Date());
+    if (isValid(parsedDate)) {
+      return formatDateFns(parsedDate, 'yyyy-MM-dd');
+    }
+    // Attempt to parse from ISO if it's not already yyyy-MM-dd
+    const isoParsed = new Date(dateInput);
+    if (isValid(isoParsed)) {
+      return formatDateFns(isoParsed, 'yyyy-MM-dd');
+    }
+  } catch (e) { /* ignore parse errors, return null */ }
+  return null;
 };
 
-// Helper function for robust ISO string formatting
-const formatToISOStringOrDefault = (dateInput: any, defaultDate: Date = new Date()): string => {
-  if (dateInput === null || dateInput === undefined || dateInput === "") return defaultDate.toISOString();
-  const date = new Date(dateInput);
-  return isValid(date) ? date.toISOString() : defaultDate.toISOString();
+const safeFormatToIsoString = (dateInput: any, defaultDate: Date = new Date()): string => {
+  if (!dateInput) return defaultDate.toISOString();
+  try {
+    const parsedDate = new Date(dateInput);
+    if (isValid(parsedDate)) {
+      return parsedDate.toISOString();
+    }
+  } catch (e) { /* ignore parse errors, return default */ }
+  return defaultDate.toISOString();
 };
 
 
@@ -119,18 +134,20 @@ export function usePatientData() {
     try {
       const storedPatients = localStorage.getItem(PATIENTS_STORAGE_KEY);
       if (storedPatients) {
-        const parsedPatients = JSON.parse(storedPatients) as any[]; // Use any[] temporarily for legacy fields
+        const parsedPatients = JSON.parse(storedPatients) as any[];
         const formattedPatients = parsedPatients.map(p => ({
-          ...getDefaultPatientFormData(), 
-          ...p, 
-          id: p.id || generateId(), // Ensure ID exists
-          fullName: p.fullName || constructFullName(p.firstName, p.middleName, p.lastName), // Ensure fullName
-          dateOfBirth: formatToDateInputStringOrNull(p.dateOfBirth) || "", // Ensure dateOfBirth is string for form
-          effectiveDate: formatToDateInputStringOrNull(p.effectiveDate),
-          lastDentalVisit: formatToDateInputStringOrNull(p.lastDentalVisit),
-          submissionDate: formatToISOStringOrDefault(p.submissionDate),
-          mobileNo: p.mobileNo || p.contactNumber || "", // Handle legacy contactNumber
-        } as Patient)); // Cast to Patient
+          ...getDefaultPatientFormData(),
+          ...p,
+          id: p.id || generateId(),
+          fullName: p.fullName || constructFullName(p.firstName, p.middleName, p.lastName),
+          dateOfBirth: safeFormatToYyyyMmDd(p.dateOfBirth) || "",
+          effectiveDate: safeFormatToYyyyMmDd(p.effectiveDate),
+          lastDentalVisit: safeFormatToYyyyMmDd(p.lastDentalVisit),
+          submissionDate: safeFormatToIsoString(p.submissionDate),
+          mobileNo: p.mobileNo || p.contactNumber || "",
+          physicianSpecialtyOther: p.physicianSpecialty === 'other' ? p.physicianSpecialtyOther || "" : "",
+          bloodTypeOther: p.bloodType === 'other' ? p.bloodTypeOther || "" : "",
+        } as Patient));
         setPatients(formattedPatients.sort((a, b) => new Date(b.submissionDate).getTime() - new Date(a.submissionDate).getTime()));
       } else {
         setPatients([]);
@@ -151,19 +168,21 @@ export function usePatientData() {
     try {
       const fullName = constructFullName(patientData.firstName, patientData.middleName, patientData.lastName);
       const newPatient: Patient = {
-        ...getDefaultPatientFormData(), 
+        ...getDefaultPatientFormData(),
         ...patientData,
         id: generateId(),
         fullName: fullName,
         submissionDate: new Date().toISOString(),
-        dateOfBirth: patientData.dateOfBirth ? new Date(patientData.dateOfBirth).toISOString().split('T')[0] : "",
-        effectiveDate: patientData.effectiveDate && patientData.effectiveDate !== "" ? new Date(patientData.effectiveDate).toISOString().split('T')[0] : null,
-        lastDentalVisit: patientData.lastDentalVisit && patientData.lastDentalVisit !== "" ? new Date(patientData.lastDentalVisit).toISOString().split('T')[0] : null,
+        dateOfBirth: safeFormatToYyyyMmDd(patientData.dateOfBirth) || "",
+        effectiveDate: safeFormatToYyyyMmDd(patientData.effectiveDate),
+        lastDentalVisit: safeFormatToYyyyMmDd(patientData.lastDentalVisit),
+        physicianSpecialtyOther: patientData.physicianSpecialty === 'other' ? patientData.physicianSpecialtyOther : "",
+        bloodTypeOther: patientData.bloodType === 'other' ? patientData.bloodTypeOther : "",
       };
-      
+
       const currentPatients = JSON.parse(localStorage.getItem(PATIENTS_STORAGE_KEY) || '[]') as Patient[];
       const updatedPatientsList = [newPatient, ...currentPatients].sort((a, b) => new Date(b.submissionDate).getTime() - new Date(a.submissionDate).getTime());
-      
+
       localStorage.setItem(PATIENTS_STORAGE_KEY, JSON.stringify(updatedPatientsList));
       setPatients(updatedPatientsList);
     } catch (error) {
@@ -181,18 +200,20 @@ export function usePatientData() {
       if (patientIndex !== -1) {
         const fullName = constructFullName(updatedPatientData.firstName, updatedPatientData.middleName, updatedPatientData.lastName);
         const patientToSave: Patient = {
-          ...getDefaultPatientFormData(), 
+          ...getDefaultPatientFormData(),
           ...updatedPatientData,
-          fullName: fullName, 
-          submissionDate: updatedPatientData.submissionDate && isValid(new Date(updatedPatientData.submissionDate)) ? new Date(updatedPatientData.submissionDate).toISOString() : new Date().toISOString(),
-          dateOfBirth: updatedPatientData.dateOfBirth && isValid(new Date(updatedPatientData.dateOfBirth)) ? new Date(updatedPatientData.dateOfBirth).toISOString().split('T')[0] : '',
-          effectiveDate: updatedPatientData.effectiveDate && isValid(new Date(updatedPatientData.effectiveDate)) ? new Date(updatedPatientData.effectiveDate).toISOString().split('T')[0] : null,
-          lastDentalVisit: updatedPatientData.lastDentalVisit && isValid(new Date(updatedPatientData.lastDentalVisit)) ? new Date(updatedPatientData.lastDentalVisit).toISOString().split('T')[0] : null,
+          fullName: fullName,
+          submissionDate: safeFormatToIsoString(updatedPatientData.submissionDate),
+          dateOfBirth: safeFormatToYyyyMmDd(updatedPatientData.dateOfBirth) || '',
+          effectiveDate: safeFormatToYyyyMmDd(updatedPatientData.effectiveDate),
+          lastDentalVisit: safeFormatToYyyyMmDd(updatedPatientData.lastDentalVisit),
+          physicianSpecialtyOther: updatedPatientData.physicianSpecialty === 'other' ? updatedPatientData.physicianSpecialtyOther : "",
+          bloodTypeOther: updatedPatientData.bloodType === 'other' ? updatedPatientData.bloodTypeOther : "",
         };
 
         const updatedPatientsList = [...currentPatients];
         updatedPatientsList[patientIndex] = patientToSave;
-        
+
         localStorage.setItem(PATIENTS_STORAGE_KEY, JSON.stringify(updatedPatientsList));
         setPatients(updatedPatientsList.sort((a, b) => new Date(b.submissionDate).getTime() - new Date(a.submissionDate).getTime()));
       }
@@ -207,7 +228,7 @@ export function usePatientData() {
     try {
       const currentPatients = JSON.parse(localStorage.getItem(PATIENTS_STORAGE_KEY) || '[]') as Patient[];
       const updatedPatients = currentPatients.filter((p) => p.id !== patientId);
-      
+
       localStorage.setItem(PATIENTS_STORAGE_KEY, JSON.stringify(updatedPatients));
       setPatients(updatedPatients);
     } catch (error) {

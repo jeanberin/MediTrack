@@ -5,13 +5,13 @@ export interface Patient {
   firstName: string;
   middleName?: string | null;
   lastName: string;
-  fullName: string; 
-  dateOfBirth: string; 
+  fullName: string;
+  dateOfBirth: string;
   gender: 'male' | 'female' | 'other' | 'prefer_not_to_say';
-  mobileNo: string; // Renamed from contactNumber
+  mobileNo: string;
   email: string;
   address: string;
-  
+
   religion?: string | null;
   nationality?: string | null;
   homeNo?: string | null;
@@ -34,6 +34,7 @@ export interface Patient {
   // Medical History - Physician
   physicianName?: string | null;
   physicianSpecialty?: string | null;
+  physicianSpecialtyOther?: string | null;
   physicianOfficeAddress?: string | null;
   physicianOfficeNumber?: string | null;
 
@@ -46,7 +47,7 @@ export interface Patient {
   q_hospitalized?: boolean;
   q_hospitalizedDetails?: string | null;
   q_takingMedication?: boolean;
-  q_medicationDetails?: string | null; // Replaces currentMedications
+  q_medicationDetails?: string | null;
   q_useTobacco?: boolean;
   q_useDrugs?: boolean;
 
@@ -63,9 +64,10 @@ export interface Patient {
   q_isPregnant?: boolean;
   q_isNursing?: boolean;
   q_onBirthControl?: boolean;
-  
+
   // Vitals
   bloodType?: string | null;
+  bloodTypeOther?: string | null;
   bloodPressure?: string | null;
 
   // Conditions Checklist
@@ -106,7 +108,7 @@ export interface Patient {
   cond_stroke?: boolean;
   cond_others?: boolean;
   cond_others_details?: string | null;
-  
-  reasonForVisit: string; // Renamed from symptoms
+
+  reasonForVisit: string;
   submissionDate: string;
 }

@@ -46,6 +46,17 @@ const SubSectionTitle: React.FC<{ title: string; className?: string }> = ({ titl
   <h3 className={cn("text-lg font-medium text-foreground mt-4 mb-2", className)}>{title}</h3>
 );
 
+const PHYSICIAN_SPECIALTIES = [
+  "General Practice", "Internal Medicine", "Pediatrics", "Cardiology",
+  "Oncology", "Neurology", "Dermatology", "Orthopedics", "Endocrinology",
+  "Gastroenterology", "Pulmonology", "Rheumatology", "Urology", "Ophthalmology",
+  "Psychiatry", "other"
+] as const;
+
+const BLOOD_TYPES = [
+  "A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-", "Unknown", "other"
+] as const;
+
 export function PatientForm() {
   const { toast } = useToast();
   const { addPatient } = usePatientData();
@@ -57,7 +68,7 @@ export function PatientForm() {
       firstName: "",
       middleName: "",
       lastName: "",
-      dateOfBirth: "", 
+      dateOfBirth: "",
       gender: undefined,
       mobileNo: "",
       email: "",
@@ -69,15 +80,16 @@ export function PatientForm() {
       officeNo: "",
       dentalInsurance: "",
       faxNo: "",
-      effectiveDate: "", 
+      effectiveDate: "",
       referredBy: "",
       guardianEmail: "",
       parentOrGuardianName: "",
       parentOrGuardianOccupation: "",
       previousDentist: "",
-      lastDentalVisit: "", 
+      lastDentalVisit: "",
       physicianName: "",
       physicianSpecialty: "",
+      physicianSpecialtyOther: "",
       physicianOfficeAddress: "",
       physicianOfficeNumber: "",
       q_goodHealth: false,
@@ -102,6 +114,7 @@ export function PatientForm() {
       q_isNursing: false,
       q_onBirthControl: false,
       bloodType: "",
+      bloodTypeOther: "",
       bloodPressure: "",
       cond_highBloodPressure: false,
       cond_heartDisease: false,
@@ -150,12 +163,14 @@ export function PatientForm() {
   const watchTakingMedication = form.watch("q_takingMedication");
   const watchAllergyOther = form.watch("allergy_other");
   const watchCondOthers = form.watch("cond_others");
+  const watchPhysicianSpecialty = form.watch("physicianSpecialty");
+  const watchBloodType = form.watch("bloodType");
 
   const [isMinor, setIsMinor] = useState(false);
-  const dob = form.watch("dateOfBirth"); 
+  const dob = form.watch("dateOfBirth");
 
   useEffect(() => {
-    if (dob && /^\d{4}-\d{2}-\d{2}$/.test(dob)) { 
+    if (dob && /^\d{4}-\d{2}-\d{2}$/.test(dob)) {
       try {
         const birthDate = parseDateFns(dob, 'yyyy-MM-dd', new Date());
         if (isValidDateFns(birthDate)) {
@@ -180,12 +195,13 @@ export function PatientForm() {
 
   async function onSubmit(data: PatientFormData) {
     try {
-      // Ensure date fields are correctly formatted as YYYY-MM-DD or null
       const processedData = {
         ...data,
-        dateOfBirth: data.dateOfBirth ? data.dateOfBirth : "", // Should already be YYYY-MM-DD from calendar
+        dateOfBirth: data.dateOfBirth ? data.dateOfBirth : "",
         effectiveDate: data.effectiveDate ? data.effectiveDate : null,
         lastDentalVisit: data.lastDentalVisit ? data.lastDentalVisit : null,
+        physicianSpecialtyOther: data.physicianSpecialty === 'other' ? data.physicianSpecialtyOther : "",
+        bloodTypeOther: data.bloodType === 'other' ? data.bloodTypeOther : "",
       };
       await addPatient(processedData);
       toast({
@@ -207,7 +223,7 @@ export function PatientForm() {
 
   const handleNewSubmission = () => {
     setIsSubmittedSuccessfully(false);
-    form.reset(); // Resets to defaultValues
+    form.reset();
   };
 
   const conditionChecklistItems = [
@@ -268,7 +284,7 @@ export function PatientForm() {
               <FormField control={form.control} name="firstName" render={({ field }) => ( <FormItem> <FormLabel>First Name *</FormLabel> <FormControl><Input placeholder="John" {...field} /></FormControl> <FormMessage /> </FormItem> )} />
               <FormField control={form.control} name="lastName" render={({ field }) => ( <FormItem> <FormLabel>Last Name *</FormLabel> <FormControl><Input placeholder="Doe" {...field} /></FormControl> <FormMessage /> </FormItem> )} />
               <FormField control={form.control} name="middleName" render={({ field }) => ( <FormItem> <FormLabel>Middle Name</FormLabel> <FormControl><Input placeholder="Michael" {...field} value={field.value || ""} /></FormControl> <FormMessage /> </FormItem> )} />
-              
+
               <FormField
                 control={form.control}
                 name="dateOfBirth"
@@ -326,7 +342,7 @@ export function PatientForm() {
               <FormField control={form.control} name="officeNo" render={({ field }) => ( <FormItem> <FormLabel>Office No.</FormLabel> <FormControl><Input type="tel" {...field} value={field.value || ""} /></FormControl> <FormMessage /> </FormItem> )} />
               <FormField control={form.control} name="dentalInsurance" render={({ field }) => ( <FormItem> <FormLabel>Dental Insurance</FormLabel> <FormControl><Input {...field} value={field.value || ""} /></FormControl> <FormMessage /> </FormItem> )} />
               <FormField control={form.control} name="faxNo" render={({ field }) => ( <FormItem> <FormLabel>Fax No.</FormLabel> <FormControl><Input type="tel" {...field} value={field.value || ""} /></FormControl> <FormMessage /> </FormItem> )} />
-              
+
               <FormField
                 control={form.control}
                 name="effectiveDate"
@@ -434,8 +450,30 @@ export function PatientForm() {
             <SubSectionTitle title="Physician Information" />
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <FormField control={form.control} name="physicianName" render={({ field }) => ( <FormItem> <FormLabel>Name of Physician (Dr.)</FormLabel> <FormControl><Input {...field} value={field.value || ""} /></FormControl> <FormMessage /> </FormItem> )} />
-              <FormField control={form.control} name="physicianSpecialty" render={({ field }) => ( <FormItem> <FormLabel>Physician's Specialty</FormLabel> <FormControl><Input {...field} value={field.value || ""} /></FormControl> <FormMessage /> </FormItem> )} />
-              <FormField control={form.control} name="physicianOfficeAddress" render={({ field }) => ( <FormItem> <FormLabel>Physician's Office Address</FormLabel> <FormControl><Textarea {...field} value={field.value || ""} /></FormControl> <FormMessage /> </FormItem> )} />
+              <FormField control={form.control} name="physicianSpecialty" render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Physician's Specialty</FormLabel>
+                  <Select onValueChange={field.onChange} value={field.value || ""}>
+                    <FormControl><SelectTrigger><SelectValue placeholder="Select specialty" /></SelectTrigger></FormControl>
+                    <SelectContent>
+                      {PHYSICIAN_SPECIALTIES.map(spec => (
+                        <SelectItem key={spec} value={spec}>{spec === 'other' ? 'Other...' : spec}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )} />
+              {watchPhysicianSpecialty === "other" && (
+                <FormField control={form.control} name="physicianSpecialtyOther" render={({ field }) => (
+                  <FormItem className="md:col-span-2">
+                    <FormLabel>Please specify other specialty</FormLabel>
+                    <FormControl><Input {...field} value={field.value || ""} placeholder="Specify specialty" /></FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )} />
+              )}
+              <FormField control={form.control} name="physicianOfficeAddress" render={({ field }) => ( <FormItem className={watchPhysicianSpecialty === "other" ? "" : "md:col-span-2"}> <FormLabel>Physician's Office Address</FormLabel> <FormControl><Textarea {...field} value={field.value || ""} /></FormControl> <FormMessage /> </FormItem> )} />
               <FormField control={form.control} name="physicianOfficeNumber" render={({ field }) => ( <FormItem> <FormLabel>Physician's Office Number</FormLabel> <FormControl><Input type="tel" {...field} value={field.value || ""} /></FormControl> <FormMessage /> </FormItem> )} />
             </div>
 
@@ -472,7 +510,29 @@ export function PatientForm() {
             <SubSectionTitle title="Additional Medical Information" />
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <FormField control={form.control} name="bleedingTime" render={({ field }) => ( <FormItem> <FormLabel>Bleeding Time</FormLabel> <FormControl><Input placeholder="e.g., Normal, Prolonged" {...field} value={field.value || ""} /></FormControl> <FormMessage /> </FormItem> )} />
-              <FormField control={form.control} name="bloodType" render={({ field }) => ( <FormItem> <FormLabel>Blood Type</FormLabel> <FormControl><Input placeholder="e.g., A+, O-" {...field} value={field.value || ""} /></FormControl> <FormMessage /> </FormItem> )} />
+              <FormField control={form.control} name="bloodType" render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Blood Type</FormLabel>
+                  <Select onValueChange={field.onChange} value={field.value || ""}>
+                    <FormControl><SelectTrigger><SelectValue placeholder="Select blood type" /></SelectTrigger></FormControl>
+                    <SelectContent>
+                      {BLOOD_TYPES.map(type => (
+                        <SelectItem key={type} value={type}>{type === 'other' ? 'Other...' : type}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )} />
+              {watchBloodType === "other" && (
+                 <FormField control={form.control} name="bloodTypeOther" render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Please specify other blood type</FormLabel>
+                    <FormControl><Input {...field} value={field.value || ""} placeholder="Specify blood type" /></FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )} />
+              )}
               <FormField control={form.control} name="bloodPressure" render={({ field }) => ( <FormItem> <FormLabel>Blood Pressure</FormLabel> <FormControl><Input placeholder="e.g., 120/80" {...field} value={field.value || ""} /></FormControl> <FormMessage /> </FormItem> )} />
             </div>
 
