@@ -13,7 +13,7 @@ const constructFullName = (firstName: string, middleName: string | undefined | n
   return `${firstName} ${middleName ? middleName + ' ' : ''}${lastName}`.trim();
 };
 
-const getDefaultPatientFormData = (): Omit<PatientFormData, 'firstName' | 'lastName' | 'dateOfBirth' | 'gender' | 'mobileNo' | 'email' | 'address' | 'reasonForVisit'> => ({
+const getDefaultPatientFormData = (): Omit<PatientFormData, 'firstName' | 'lastName' | 'dateOfBirth' | 'gender' | 'mobileNo' | 'email' | 'address' | 'reasonForVisit' | 'consentGiven' | 'signature'> & { consentGiven: boolean; signature: string } => ({
   middleName: "",
   religion: "",
   nationality: "",
@@ -95,22 +95,27 @@ const getDefaultPatientFormData = (): Omit<PatientFormData, 'firstName' | 'lastN
   cond_stroke: false,
   cond_others: false,
   cond_others_details: "",
+  consentGiven: false,
+  signature: "",
 });
 
 const safeFormatToYyyyMmDd = (dateInput: any): string | null => {
   if (!dateInput) return null;
   try {
-    const parsedDate = parseDateFns(dateInput, 'yyyy-MM-dd', new Date());
-    if (isValid(parsedDate)) {
-      return formatDateFns(parsedDate, 'yyyy-MM-dd');
+    // If it's already yyyy-mm-dd, parse and reformat to ensure validity and consistency
+    if (typeof dateInput === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(dateInput)) {
+        const parsed = parseDateFns(dateInput, 'yyyy-MM-dd', new Date());
+        if (isValid(parsed)) {
+            return formatDateFns(parsed, 'yyyy-MM-dd');
+        }
     }
-    // Attempt to parse from ISO if it's not already yyyy-MM-dd
+    // Attempt to parse from ISO or other common date object forms
     const isoParsed = new Date(dateInput);
     if (isValid(isoParsed)) {
       return formatDateFns(isoParsed, 'yyyy-MM-dd');
     }
   } catch (e) { /* ignore parse errors, return null */ }
-  return null;
+  return null; // Return null if parsing fails or input is invalid
 };
 
 const safeFormatToIsoString = (dateInput: any, defaultDate: Date = new Date()): string => {
@@ -140,13 +145,15 @@ export function usePatientData() {
           ...p,
           id: p.id || generateId(),
           fullName: p.fullName || constructFullName(p.firstName, p.middleName, p.lastName),
-          dateOfBirth: safeFormatToYyyyMmDd(p.dateOfBirth) || "",
+          dateOfBirth: safeFormatToYyyyMmDd(p.dateOfBirth) || "", // Ensure string for form
           effectiveDate: safeFormatToYyyyMmDd(p.effectiveDate),
           lastDentalVisit: safeFormatToYyyyMmDd(p.lastDentalVisit),
           submissionDate: safeFormatToIsoString(p.submissionDate),
           mobileNo: p.mobileNo || p.contactNumber || "",
           physicianSpecialtyOther: p.physicianSpecialty === 'other' ? p.physicianSpecialtyOther || "" : "",
           bloodTypeOther: p.bloodType === 'other' ? p.bloodTypeOther || "" : "",
+          consentGiven: p.consentGiven || false,
+          signature: p.signature || "",
         } as Patient));
         setPatients(formattedPatients.sort((a, b) => new Date(b.submissionDate).getTime() - new Date(a.submissionDate).getTime()));
       } else {
@@ -168,16 +175,18 @@ export function usePatientData() {
     try {
       const fullName = constructFullName(patientData.firstName, patientData.middleName, patientData.lastName);
       const newPatient: Patient = {
-        ...getDefaultPatientFormData(),
+        ...getDefaultPatientFormData(), // Ensure all fields are present
         ...patientData,
         id: generateId(),
         fullName: fullName,
         submissionDate: new Date().toISOString(),
-        dateOfBirth: safeFormatToYyyyMmDd(patientData.dateOfBirth) || "",
+        dateOfBirth: safeFormatToYyyyMmDd(patientData.dateOfBirth) || "", // Ensure string
         effectiveDate: safeFormatToYyyyMmDd(patientData.effectiveDate),
         lastDentalVisit: safeFormatToYyyyMmDd(patientData.lastDentalVisit),
         physicianSpecialtyOther: patientData.physicianSpecialty === 'other' ? patientData.physicianSpecialtyOther : "",
         bloodTypeOther: patientData.bloodType === 'other' ? patientData.bloodTypeOther : "",
+        consentGiven: patientData.consentGiven,
+        signature: patientData.signature,
       };
 
       const currentPatients = JSON.parse(localStorage.getItem(PATIENTS_STORAGE_KEY) || '[]') as Patient[];
@@ -209,6 +218,8 @@ export function usePatientData() {
           lastDentalVisit: safeFormatToYyyyMmDd(updatedPatientData.lastDentalVisit),
           physicianSpecialtyOther: updatedPatientData.physicianSpecialty === 'other' ? updatedPatientData.physicianSpecialtyOther : "",
           bloodTypeOther: updatedPatientData.bloodType === 'other' ? updatedPatientData.bloodTypeOther : "",
+          consentGiven: updatedPatientData.consentGiven,
+          signature: updatedPatientData.signature,
         };
 
         const updatedPatientsList = [...currentPatients];

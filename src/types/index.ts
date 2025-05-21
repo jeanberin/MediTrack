@@ -6,7 +6,7 @@ export interface Patient {
   middleName?: string | null;
   lastName: string;
   fullName: string;
-  dateOfBirth: string;
+  dateOfBirth: string; // Stored as YYYY-MM-DD string
   gender: 'male' | 'female' | 'other' | 'prefer_not_to_say';
   mobileNo: string;
   email: string;
@@ -19,7 +19,7 @@ export interface Patient {
   officeNo?: string | null;
   dentalInsurance?: string | null;
   faxNo?: string | null;
-  effectiveDate?: string | null;
+  effectiveDate?: string | null; // Stored as YYYY-MM-DD string or null
   referredBy?: string | null;
 
   // For Minors
@@ -29,7 +29,7 @@ export interface Patient {
 
   // Dental History
   previousDentist?: string | null;
-  lastDentalVisit?: string | null;
+  lastDentalVisit?: string | null; // Stored as YYYY-MM-DD string or null
 
   // Medical History - Physician
   physicianName?: string | null;
@@ -110,5 +110,9 @@ export interface Patient {
   cond_others_details?: string | null;
 
   reasonForVisit: string;
-  submissionDate: string;
+  submissionDate: string; // ISO string format
+
+  // Consent
+  consentGiven: boolean;
+  signature: string;
 }
