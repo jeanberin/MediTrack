@@ -43,7 +43,7 @@ import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
 import { Save, X, CalendarIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { format, parse as parseDateFns, isValid as isValidDateFns } from 'date-fns';
+import { format as formatDateFns, parse as parseDateFns, isValid as isValidDateFns } from 'date-fns';
 import { useEffect, useState } from 'react';
 
 const SectionTitle: React.FC<{ title: string; className?: string }> = ({ title, className }) => (
@@ -66,6 +66,37 @@ const PHYSICIAN_SPECIALTIES = [
 
 const BLOOD_TYPES = [
   "A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-", "Unknown", "other"
+] as const;
+
+const RELIGIONS = [
+  "Christianity", "Islam", "Hinduism", "Buddhism", "Judaism", 
+  "Sikhism", "Bahá'í Faith", "Jainism", "Shinto", "Taoism",
+  "Agnostic", "Atheist", "Spiritual but not religious", 
+  "Other", "Prefer not to say"
+] as const;
+
+const NATIONALITIES = [
+  "Afghan", "Albanian", "Algerian", "American", "Andorran", "Angolan", "Argentine", "Armenian", "Australian", "Austrian",
+  "Azerbaijani", "Bahamian", "Bahraini", "Bangladeshi", "Barbadian", "Belarusian", "Belgian", "Belizean", "Beninese", "Bhutanese",
+  "Bolivian", "Bosnian", "Botswanan", "Brazilian", "British", "Bruneian", "Bulgarian", "Burkinabe", "Burmese", "Burundian",
+  "Cambodian", "Cameroonian", "Canadian", "Cape Verdean", "Central African", "Chadian", "Chilean", "Chinese", "Colombian", "Comoran",
+  "Congolese (Congo-Brazzaville)", "Congolese (Congo-Kinshasa)", "Costa Rican", "Croatian", "Cuban", "Cypriot", "Czech", "Danish",
+  "Djiboutian", "Dominican (Dominica)", "Dominican (Dominican Republic)", "Dutch", "East Timorese", "Ecuadorean", "Egyptian",
+  "Emirati", "Equatorial Guinean", "Eritrean", "Estonian", "Ethiopian", "Fijian", "Filipino", "Finnish", "French", "Gabonese",
+  "Gambian", "Georgian", "German", "Ghanaian", "Greek", "Grenadian", "Guatemalan", "Guinean", "Guinean-Bissauan", "Guyanese",
+  "Haitian", "Honduran", "Hungarian", "Icelandic", "Indian", "Indonesian", "Iranian", "Iraqi", "Irish", "Israeli", "Italian",
+  "Ivorian", "Jamaican", "Japanese", "Jordanian", "Kazakhstani", "Kenyan", "Kittian and Nevisian", "Kuwaiti", "Kyrgyz", "Laotian",
+  "Latvian", "Lebanese", "Liberian", "Libyan", "Liechtensteiner", "Lithuanian", "Luxembourger", "Macedonian", "Malagasy", "Malawian",
+  "Malaysian", "Maldivan", "Malian", "Maltese", "Marshallese", "Mauritanian", "Mauritian", "Mexican", "Micronesian", "Moldovan",
+  "Monacan", "Mongolian", "Montenegrin", "Moroccan", "Mosotho", "Motswana", "Mozambican", "Namibian", "Nauruan", "Nepalese",
+  "New Zealander", "Nicaraguan", "Nigerian", "Nigerien", "North Korean", "Northern Irish", "Norwegian", "Omani", "Pakistani",
+  "Palauan", "Panamanian", "Papua New Guinean", "Paraguayan", "Peruvian", "Polish", "Portuguese", "Qatari", "Romanian", "Russian",
+  "Rwandan", "Saint Lucian", "Salvadoran", "Samoan", "San Marinese", "Sao Tomean", "Saudi", "Scottish", "Senegalese", "Serbian",
+  "Seychellois", "Sierra Leonean", "Singaporean", "Slovakian", "Slovenian", "Solomon Islander", "Somali", "South African",
+  "South Korean", "South Sudanese", "Spanish", "Sri Lankan", "Sudanese", "Surinamer", "Swazi", "Swedish", "Swiss", "Syrian",
+  "Taiwanese", "Tajik", "Tanzanian", "Thai", "Togolese", "Tongan", "Trinidadian or Tobagonian", "Tunisian", "Turkish", "Tuvaluan",
+  "Ugandan", "Ukrainian", "Uruguayan", "Uzbekistani", "Venezuelan", "Vietnamese", "Welsh", "Yemenite", "Zambian", "Zimbabwean",
+  "Other"
 ] as const;
 
 
@@ -235,7 +266,7 @@ export function EditPatientDialog({ patient, isOpen, onOpenChange, onSave }: Edi
         ...patient,
         ...data,
         fullName: constructedFullName,
-        submissionDate: patient.submissionDate,
+        submissionDate: patient.submissionDate, // Keep original submission date
         dateOfBirth: data.dateOfBirth ? data.dateOfBirth : "", 
         effectiveDate: data.effectiveDate ? data.effectiveDate : null,
         lastDentalVisit: data.lastDentalVisit ? data.lastDentalVisit : null,
@@ -314,7 +345,7 @@ export function EditPatientDialog({ patient, isOpen, onOpenChange, onSave }: Edi
                           <span className="flex items-center justify-between w-full">
                             <span>
                               {field.value && isValidDateFns(parseDateFns(field.value, 'yyyy-MM-dd', new Date()))
-                                ? format(parseDateFns(field.value, 'yyyy-MM-dd', new Date()), "PPP")
+                                ? formatDateFns(parseDateFns(field.value, 'yyyy-MM-dd', new Date()), "PPP")
                                 : "Pick a date"}
                             </span>
                             <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
@@ -324,8 +355,8 @@ export function EditPatientDialog({ patient, isOpen, onOpenChange, onSave }: Edi
                       <PopoverContent className="w-auto p-0" align="start">
                         <Calendar
                           mode="single"
-                          selected={field.value ? parseDateFns(field.value, 'yyyy-MM-dd', new Date()) : undefined}
-                          onSelect={(date) => field.onChange(date ? format(date, "yyyy-MM-dd") : '')}
+                          selected={field.value && isValidDateFns(parseDateFns(field.value, 'yyyy-MM-dd', new Date())) ? parseDateFns(field.value, 'yyyy-MM-dd', new Date()) : undefined}
+                          onSelect={(date) => field.onChange(date ? formatDateFns(date, "yyyy-MM-dd") : '')}
                           disabled={(date) =>
                             date > new Date() || date < new Date("1900-01-01")
                           }
@@ -344,8 +375,36 @@ export function EditPatientDialog({ patient, isOpen, onOpenChange, onSave }: Edi
               <FormField control={form.control} name="mobileNo" render={({ field }) => ( <FormItem> <FormLabel>Mobile No. *</FormLabel> <FormControl><Input type="tel" {...field} /></FormControl> <FormMessage /> </FormItem> )} />
               <FormField control={form.control} name="email" render={({ field }) => ( <FormItem> <FormLabel>Email Address *</FormLabel> <FormControl><Input type="email" {...field} /></FormControl> <FormMessage /> </FormItem> )} />
               <FormField control={form.control} name="address" render={({ field }) => ( <FormItem className="md:col-span-2"> <FormLabel>Address *</FormLabel> <FormControl><Textarea {...field} /></FormControl> <FormMessage /> </FormItem> )} />
-              <FormField control={form.control} name="religion" render={({ field }) => ( <FormItem> <FormLabel>Religion</FormLabel> <FormControl><Input {...field} value={field.value || ""} /></FormControl> <FormMessage /> </FormItem> )} />
-              <FormField control={form.control} name="nationality" render={({ field }) => ( <FormItem> <FormLabel>Nationality</FormLabel> <FormControl><Input {...field} value={field.value || ""} /></FormControl> <FormMessage /> </FormItem> )} />
+              
+              <FormField control={form.control} name="religion" render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Religion</FormLabel>
+                  <Select onValueChange={field.onChange} value={field.value || ""}>
+                    <FormControl><SelectTrigger><SelectValue placeholder="Select religion" /></SelectTrigger></FormControl>
+                    <SelectContent>
+                      {RELIGIONS.map(religion => (
+                        <SelectItem key={religion} value={religion}>{religion}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )} />
+              <FormField control={form.control} name="nationality" render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Nationality</FormLabel>
+                  <Select onValueChange={field.onChange} value={field.value || ""}>
+                    <FormControl><SelectTrigger><SelectValue placeholder="Select nationality" /></SelectTrigger></FormControl>
+                    <SelectContent className="max-h-60"> {/* Added for long list */}
+                      {NATIONALITIES.map(nationality => (
+                        <SelectItem key={nationality} value={nationality}>{nationality}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )} />
+
               <FormField control={form.control} name="homeNo" render={({ field }) => ( <FormItem> <FormLabel>Home No.</FormLabel> <FormControl><Input type="tel" {...field} value={field.value || ""} /></FormControl> <FormMessage /> </FormItem> )} />
               <FormField control={form.control} name="occupation" render={({ field }) => ( <FormItem> <FormLabel>Occupation</FormLabel> <FormControl><Input {...field} value={field.value || ""} /></FormControl> <FormMessage /> </FormItem> )} />
               <FormField control={form.control} name="officeNo" render={({ field }) => ( <FormItem> <FormLabel>Office No.</FormLabel> <FormControl><Input type="tel" {...field} value={field.value || ""} /></FormControl> <FormMessage /> </FormItem> )} />
@@ -370,7 +429,7 @@ export function EditPatientDialog({ patient, isOpen, onOpenChange, onSave }: Edi
                           <span className="flex items-center justify-between w-full">
                             <span>
                               {field.value && isValidDateFns(parseDateFns(field.value, 'yyyy-MM-dd', new Date()))
-                                ? format(parseDateFns(field.value, 'yyyy-MM-dd', new Date()), "PPP")
+                                ? formatDateFns(parseDateFns(field.value, 'yyyy-MM-dd', new Date()), "PPP")
                                 : "Pick a date"}
                             </span>
                             <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
@@ -380,8 +439,8 @@ export function EditPatientDialog({ patient, isOpen, onOpenChange, onSave }: Edi
                       <PopoverContent className="w-auto p-0" align="start">
                         <Calendar
                           mode="single"
-                          selected={field.value ? parseDateFns(field.value, 'yyyy-MM-dd', new Date()) : undefined}
-                          onSelect={(date) => field.onChange(date ? format(date, "yyyy-MM-dd") : '')}
+                          selected={field.value && isValidDateFns(parseDateFns(field.value, 'yyyy-MM-dd', new Date())) ? parseDateFns(field.value, 'yyyy-MM-dd', new Date()) : undefined}
+                          onSelect={(date) => field.onChange(date ? formatDateFns(date, "yyyy-MM-dd") : '')}
                           initialFocus
                           captionLayout="dropdown-buttons"
                           fromYear={new Date().getFullYear() - 10}
@@ -429,7 +488,7 @@ export function EditPatientDialog({ patient, isOpen, onOpenChange, onSave }: Edi
                           <span className="flex items-center justify-between w-full">
                             <span>
                               {field.value && isValidDateFns(parseDateFns(field.value, 'yyyy-MM-dd', new Date()))
-                                ? format(parseDateFns(field.value, 'yyyy-MM-dd', new Date()), "PPP")
+                                ? formatDateFns(parseDateFns(field.value, 'yyyy-MM-dd', new Date()), "PPP")
                                 : "Pick a date"}
                             </span>
                             <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
@@ -439,8 +498,8 @@ export function EditPatientDialog({ patient, isOpen, onOpenChange, onSave }: Edi
                       <PopoverContent className="w-auto p-0" align="start">
                         <Calendar
                           mode="single"
-                          selected={field.value ? parseDateFns(field.value, 'yyyy-MM-dd', new Date()) : undefined}
-                          onSelect={(date) => field.onChange(date ? format(date, "yyyy-MM-dd") : '')}
+                          selected={field.value && isValidDateFns(parseDateFns(field.value, 'yyyy-MM-dd', new Date())) ? parseDateFns(field.value, 'yyyy-MM-dd', new Date()) : undefined}
+                          onSelect={(date) => field.onChange(date ? formatDateFns(date, "yyyy-MM-dd") : '')}
                           initialFocus
                           captionLayout="dropdown-buttons"
                           fromYear={new Date().getFullYear() - 50}
@@ -575,3 +634,5 @@ export function EditPatientDialog({ patient, isOpen, onOpenChange, onSave }: Edi
     </Card>
   );
 }
+
+    
