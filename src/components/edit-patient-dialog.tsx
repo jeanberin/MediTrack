@@ -43,7 +43,7 @@ import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
 import { Save, X, CalendarIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { format, parse as parseDateFns, isValid } from 'date-fns';
+import { format as formatDateFns, parse as parseDateFns, isValid as isValidDateFns } from 'date-fns';
 import { useEffect, useState } from 'react';
 
 const SectionTitle: React.FC<{ title: string; className?: string }> = ({ title, className }) => (
@@ -145,7 +145,7 @@ export function EditPatientDialog({ patient, isOpen, onOpenChange, onSave }: Edi
     if (dob && /^\d{4}-\d{2}-\d{2}$/.test(dob)) {
       try {
         const birthDate = parseDateFns(dob, 'yyyy-MM-dd', new Date());
-        if (isValid(birthDate)) {
+        if (isValidDateFns(birthDate)) {
           const today = new Date();
           let age = today.getFullYear() - birthDate.getFullYear();
           const m = today.getMonth() - birthDate.getMonth();
@@ -166,13 +166,13 @@ export function EditPatientDialog({ patient, isOpen, onOpenChange, onSave }: Edi
 
   useEffect(() => {
     if (patient && isOpen) {
-      const dobForForm = (patient.dateOfBirth && isValid(parseDateFns(patient.dateOfBirth, 'yyyy-MM-dd', new Date())))
+      const dobForForm = (patient.dateOfBirth && isValidDateFns(parseDateFns(patient.dateOfBirth, 'yyyy-MM-dd', new Date())))
                        ? patient.dateOfBirth
                        : "";
-      const effectiveDateForForm = (patient.effectiveDate && isValid(parseDateFns(patient.effectiveDate, 'yyyy-MM-dd', new Date())))
+      const effectiveDateForForm = (patient.effectiveDate && isValidDateFns(parseDateFns(patient.effectiveDate, 'yyyy-MM-dd', new Date())))
                                  ? patient.effectiveDate
                                  : "";
-      const lastDentalVisitForForm = (patient.lastDentalVisit && isValid(parseDateFns(patient.lastDentalVisit, 'yyyy-MM-dd', new Date())))
+      const lastDentalVisitForForm = (patient.lastDentalVisit && isValidDateFns(parseDateFns(patient.lastDentalVisit, 'yyyy-MM-dd', new Date())))
                                    ? patient.lastDentalVisit
                                    : "";
       const genderForForm = GENDERS_CONST.includes(patient.gender as GenderType) ? patient.gender : 'prefer_not_to_say';
@@ -280,8 +280,8 @@ export function EditPatientDialog({ patient, isOpen, onOpenChange, onSave }: Edi
       const constructedFullName = `${data.firstName} ${data.middleName ? data.middleName + ' ' : ''}${data.lastName}`.trim();
 
       const patientToSave: Patient = {
-        ...patient, // existing fields like id, submissionDate
-        ...data,    // all form data
+        ...patient, 
+        ...data,    
         fullName: constructedFullName,
         dateOfBirth: data.dateOfBirth ? data.dateOfBirth : "", 
         effectiveDate: data.effectiveDate ? data.effectiveDate : null,
@@ -332,14 +332,14 @@ export function EditPatientDialog({ patient, isOpen, onOpenChange, onSave }: Edi
       <DialogContent className="sm:max-w-3xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Edit Patient: {patient.fullName}</DialogTitle>
-          <ShadcnDialogDescription>Modify the patient's medical information below. All fields marked with * are required.</ShadcnDialogDescription>
+          <ShadcnDialogDescription>Modify the patient's medical information below. All fields marked with <span className="text-destructive">*</span> are required.</ShadcnDialogDescription>
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8 px-1 py-2">
             <SectionTitle title="Patient Information Record" />
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <FormField control={form.control} name="firstName" render={({ field }) => ( <FormItem> <FormLabel>First Name *</FormLabel> <FormControl><Input {...field} /></FormControl> <FormMessage /> </FormItem> )} />
-              <FormField control={form.control} name="lastName" render={({ field }) => ( <FormItem> <FormLabel>Last Name *</FormLabel> <FormControl><Input {...field} /></FormControl> <FormMessage /> </FormItem> )} />
+              <FormField control={form.control} name="firstName" render={({ field }) => ( <FormItem> <FormLabel>First Name <span className="text-destructive">*</span></FormLabel> <FormControl><Input {...field} /></FormControl> <FormMessage /> </FormItem> )} />
+              <FormField control={form.control} name="lastName" render={({ field }) => ( <FormItem> <FormLabel>Last Name <span className="text-destructive">*</span></FormLabel> <FormControl><Input {...field} /></FormControl> <FormMessage /> </FormItem> )} />
               <FormField control={form.control} name="middleName" render={({ field }) => ( <FormItem> <FormLabel>Middle Name</FormLabel> <FormControl><Input {...field} value={field.value || ""} /></FormControl> <FormMessage /> </FormItem> )} />
 
               <FormField
@@ -347,7 +347,7 @@ export function EditPatientDialog({ patient, isOpen, onOpenChange, onSave }: Edi
                 name="dateOfBirth"
                 render={({ field }) => (
                   <FormItem className="flex flex-col">
-                    <FormLabel>Date of Birth *</FormLabel>
+                    <FormLabel>Date of Birth <span className="text-destructive">*</span></FormLabel>
                     <Popover>
                       <PopoverTrigger asChild>
                         <Button
@@ -360,8 +360,8 @@ export function EditPatientDialog({ patient, isOpen, onOpenChange, onSave }: Edi
                         >
                           <span className="flex items-center justify-between w-full">
                             <span>
-                              {field.value && isValid(parseDateFns(field.value, 'yyyy-MM-dd', new Date()))
-                                ? format(parseDateFns(field.value, 'yyyy-MM-dd', new Date()), "PPP")
+                              {field.value && isValidDateFns(parseDateFns(field.value, 'yyyy-MM-dd', new Date()))
+                                ? formatDateFns(parseDateFns(field.value, 'yyyy-MM-dd', new Date()), "PPP")
                                 : "Pick a date"}
                             </span>
                             <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
@@ -371,8 +371,8 @@ export function EditPatientDialog({ patient, isOpen, onOpenChange, onSave }: Edi
                       <PopoverContent className="w-auto p-0" align="start">
                         <Calendar
                           mode="single"
-                          selected={field.value && isValid(parseDateFns(field.value, 'yyyy-MM-dd', new Date())) ? parseDateFns(field.value, 'yyyy-MM-dd', new Date()) : undefined}
-                          onSelect={(date) => field.onChange(date ? format(date, "yyyy-MM-dd") : '')}
+                          selected={field.value && isValidDateFns(parseDateFns(field.value, 'yyyy-MM-dd', new Date())) ? parseDateFns(field.value, 'yyyy-MM-dd', new Date()) : undefined}
+                          onSelect={(date) => field.onChange(date ? formatDateFns(date, "yyyy-MM-dd") : '')}
                           disabled={(date) =>
                             date > new Date() || date < new Date("1900-01-01")
                           }
@@ -387,10 +387,10 @@ export function EditPatientDialog({ patient, isOpen, onOpenChange, onSave }: Edi
                   </FormItem>
                 )}
               />
-              <FormField control={form.control} name="gender" render={({ field }) => ( <FormItem> <FormLabel>Gender *</FormLabel> <Select onValueChange={field.onChange} value={field.value}> <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl> <SelectContent> <SelectItem value="male">Male</SelectItem> <SelectItem value="female">Female</SelectItem> <SelectItem value="other">Other</SelectItem> <SelectItem value="prefer_not_to_say">Prefer not to say</SelectItem> </SelectContent> </Select> <FormMessage /> </FormItem> )} />
-              <FormField control={form.control} name="mobileNo" render={({ field }) => ( <FormItem> <FormLabel>Mobile No. *</FormLabel> <FormControl><Input type="tel" {...field} /></FormControl> <FormMessage /> </FormItem> )} />
-              <FormField control={form.control} name="email" render={({ field }) => ( <FormItem> <FormLabel>Email Address *</FormLabel> <FormControl><Input type="email" {...field} /></FormControl> <FormMessage /> </FormItem> )} />
-              <FormField control={form.control} name="address" render={({ field }) => ( <FormItem className="md:col-span-2"> <FormLabel>Address *</FormLabel> <FormControl><Textarea {...field} /></FormControl> <FormMessage /> </FormItem> )} />
+              <FormField control={form.control} name="gender" render={({ field }) => ( <FormItem> <FormLabel>Gender <span className="text-destructive">*</span></FormLabel> <Select onValueChange={field.onChange} value={field.value}> <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl> <SelectContent> <SelectItem value="male">Male</SelectItem> <SelectItem value="female">Female</SelectItem> <SelectItem value="other">Other</SelectItem> <SelectItem value="prefer_not_to_say">Prefer not to say</SelectItem> </SelectContent> </Select> <FormMessage /> </FormItem> )} />
+              <FormField control={form.control} name="mobileNo" render={({ field }) => ( <FormItem> <FormLabel>Mobile No. <span className="text-destructive">*</span></FormLabel> <FormControl><Input type="tel" {...field} /></FormControl> <FormMessage /> </FormItem> )} />
+              <FormField control={form.control} name="email" render={({ field }) => ( <FormItem> <FormLabel>Email Address <span className="text-destructive">*</span></FormLabel> <FormControl><Input type="email" {...field} /></FormControl> <FormMessage /> </FormItem> )} />
+              <FormField control={form.control} name="address" render={({ field }) => ( <FormItem className="md:col-span-2"> <FormLabel>Address <span className="text-destructive">*</span></FormLabel> <FormControl><Textarea {...field} /></FormControl> <FormMessage /> </FormItem> )} />
               
               <FormField control={form.control} name="religion" render={({ field }) => (
                 <FormItem>
@@ -444,8 +444,8 @@ export function EditPatientDialog({ patient, isOpen, onOpenChange, onSave }: Edi
                         >
                           <span className="flex items-center justify-between w-full">
                             <span>
-                              {field.value && isValid(parseDateFns(field.value, 'yyyy-MM-dd', new Date()))
-                                ? format(parseDateFns(field.value, 'yyyy-MM-dd', new Date()), "PPP")
+                              {field.value && isValidDateFns(parseDateFns(field.value, 'yyyy-MM-dd', new Date()))
+                                ? formatDateFns(parseDateFns(field.value, 'yyyy-MM-dd', new Date()), "PPP")
                                 : "Pick a date"}
                             </span>
                             <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
@@ -455,8 +455,8 @@ export function EditPatientDialog({ patient, isOpen, onOpenChange, onSave }: Edi
                       <PopoverContent className="w-auto p-0" align="start">
                         <Calendar
                           mode="single"
-                          selected={field.value && isValid(parseDateFns(field.value, 'yyyy-MM-dd', new Date())) ? parseDateFns(field.value, 'yyyy-MM-dd', new Date()) : undefined}
-                          onSelect={(date) => field.onChange(date ? format(date, "yyyy-MM-dd") : '')}
+                          selected={field.value && isValidDateFns(parseDateFns(field.value, 'yyyy-MM-dd', new Date())) ? parseDateFns(field.value, 'yyyy-MM-dd', new Date()) : undefined}
+                          onSelect={(date) => field.onChange(date ? formatDateFns(date, "yyyy-MM-dd") : '')}
                           initialFocus
                           captionLayout="dropdown-buttons"
                           fromYear={new Date().getFullYear() - 10}
@@ -475,8 +475,8 @@ export function EditPatientDialog({ patient, isOpen, onOpenChange, onSave }: Edi
               <>
                 <SubSectionTitle title="Parent/Guardian Information (for Minors)" />
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <FormField control={form.control} name="parentOrGuardianName" render={({ field }) => ( <FormItem> <FormLabel>Parent/Guardian's Name *</FormLabel> <FormControl><Input {...field} /></FormControl> <FormMessage /> </FormItem> )} />
-                  <FormField control={form.control} name="guardianEmail" render={({ field }) => ( <FormItem> <FormLabel>Parent/Guardian's Email *</FormLabel> <FormControl><Input type="email" {...field} /></FormControl> <FormMessage /> </FormItem> )} />
+                  <FormField control={form.control} name="parentOrGuardianName" render={({ field }) => ( <FormItem> <FormLabel>Parent/Guardian's Name <span className="text-destructive">*</span></FormLabel> <FormControl><Input {...field} /></FormControl> <FormMessage /> </FormItem> )} />
+                  <FormField control={form.control} name="guardianEmail" render={({ field }) => ( <FormItem> <FormLabel>Parent/Guardian's Email <span className="text-destructive">*</span></FormLabel> <FormControl><Input type="email" {...field} /></FormControl> <FormMessage /> </FormItem> )} />
                   <FormField control={form.control} name="parentOrGuardianOccupation" render={({ field }) => ( <FormItem className="md:col-span-2"> <FormLabel>Parent/Guardian's Occupation</FormLabel> <FormControl><Input {...field} value={field.value || ""} /></FormControl> <FormMessage /> </FormItem> )} />
                 </div>
               </>
@@ -503,8 +503,8 @@ export function EditPatientDialog({ patient, isOpen, onOpenChange, onSave }: Edi
                         >
                           <span className="flex items-center justify-between w-full">
                             <span>
-                              {field.value && isValid(parseDateFns(field.value, 'yyyy-MM-dd', new Date()))
-                                ? format(parseDateFns(field.value, 'yyyy-MM-dd', new Date()), "PPP")
+                              {field.value && isValidDateFns(parseDateFns(field.value, 'yyyy-MM-dd', new Date()))
+                                ? formatDateFns(parseDateFns(field.value, 'yyyy-MM-dd', new Date()), "PPP")
                                 : "Pick a date"}
                             </span>
                             <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
@@ -514,8 +514,8 @@ export function EditPatientDialog({ patient, isOpen, onOpenChange, onSave }: Edi
                       <PopoverContent className="w-auto p-0" align="start">
                         <Calendar
                           mode="single"
-                          selected={field.value && isValid(parseDateFns(field.value, 'yyyy-MM-dd', new Date())) ? parseDateFns(field.value, 'yyyy-MM-dd', new Date()) : undefined}
-                          onSelect={(date) => field.onChange(date ? format(date, "yyyy-MM-dd") : '')}
+                          selected={field.value && isValidDateFns(parseDateFns(field.value, 'yyyy-MM-dd', new Date())) ? parseDateFns(field.value, 'yyyy-MM-dd', new Date()) : undefined}
+                          onSelect={(date) => field.onChange(date ? formatDateFns(date, "yyyy-MM-dd") : '')}
                           initialFocus
                           captionLayout="dropdown-buttons"
                           fromYear={new Date().getFullYear() - 50}
@@ -550,7 +550,7 @@ export function EditPatientDialog({ patient, isOpen, onOpenChange, onSave }: Edi
               {watchPhysicianSpecialty === "other" && (
                 <FormField control={form.control} name="physicianSpecialtyOther" render={({ field }) => (
                   <FormItem className="md:col-span-2">
-                    <FormLabel>Please specify other specialty *</FormLabel>
+                    <FormLabel>Please specify other specialty <span className="text-destructive">*</span></FormLabel>
                     <FormControl><Input {...field} placeholder="Specify specialty" /></FormControl>
                     <FormMessage />
                   </FormItem>
@@ -604,7 +604,7 @@ export function EditPatientDialog({ patient, isOpen, onOpenChange, onSave }: Edi
                {watchBloodType === "other" && (
                  <FormField control={form.control} name="bloodTypeOther" render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Please specify other blood type *</FormLabel>
+                    <FormLabel>Please specify other blood type <span className="text-destructive">*</span></FormLabel>
                     <FormControl><Input {...field} placeholder="Specify blood type" /></FormControl>
                     <FormMessage />
                   </FormItem>
@@ -638,7 +638,7 @@ export function EditPatientDialog({ patient, isOpen, onOpenChange, onSave }: Edi
             {watchCondOthers && <FormField control={form.control} name="cond_others_details" render={({ field }) => ( <FormItem> <FormLabel>Please specify other conditions:</FormLabel> <FormControl><Textarea {...field} value={field.value || ""} /></FormControl> <FormMessage /> </FormItem> )} />}
 
             <Separator className="my-8" />
-            <FormField control={form.control} name="reasonForVisit" render={({ field }) => ( <FormItem> <FormLabel>Primary Reason for This Visit / Chief Complaint *</FormLabel> <FormControl><Textarea placeholder="e.g., Routine check-up, toothache, etc." {...field} /></FormControl> <FormMessage /> </FormItem> )} />
+            <FormField control={form.control} name="reasonForVisit" render={({ field }) => ( <FormItem> <FormLabel>Primary Reason for This Visit / Chief Complaint <span className="text-destructive">*</span></FormLabel> <FormControl><Textarea placeholder="e.g., Routine check-up, toothache, etc." {...field} /></FormControl> <FormMessage /> </FormItem> )} />
 
             <Separator className="my-8" />
             <SectionTitle title="Patient Consent & Signature" />
@@ -657,7 +657,7 @@ export function EditPatientDialog({ patient, isOpen, onOpenChange, onSave }: Edi
                     </FormControl>
                     <div className="space-y-1 leading-none">
                       <FormLabel htmlFor="consentGiven" className="font-medium cursor-pointer text-sm">
-                        I hereby authorize MediTrack and its affiliated healthcare providers to collect, use, and disclose my personal and medical information as described in the Privacy Policy and for the purpose of providing medical care. I understand that my information will be kept confidential and used in accordance with applicable laws. *
+                        I hereby authorize MediTrack and its affiliated healthcare providers to collect, use, and disclose my personal and medical information as described in the Privacy Policy and for the purpose of providing medical care. I understand that my information will be kept confidential and used in accordance with applicable laws. <span className="text-destructive">*</span>
                       </FormLabel>
                       <FormDescription className="text-xs">
                         You must agree to the terms to proceed.
@@ -672,7 +672,7 @@ export function EditPatientDialog({ patient, isOpen, onOpenChange, onSave }: Edi
                 name="signature"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Signature (Type your full name as entered above) *</FormLabel>
+                    <FormLabel>Signature (Type your full name as entered above) <span className="text-destructive">*</span></FormLabel>
                     <FormControl>
                       <Input placeholder="e.g., John Michael Doe" {...field} />
                     </FormControl>
