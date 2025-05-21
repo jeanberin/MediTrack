@@ -4,21 +4,25 @@ import { parse as parseDateFns, isValid as isValidDateFns, format as formatDateF
 
 // Helper for date validation (expects YYYY-MM-DD from calendar)
 const dateSchema = (fieldName: string, isRequired: boolean = true) => {
-  let baseSchema = z.string();
+  let schema = z.string();
 
   if (isRequired) {
-    baseSchema = baseSchema.min(1, { message: `${fieldName} is required.` });
+    schema = schema.min(1, { message: `${fieldName} is required.` });
   }
 
-  return baseSchema
-    .optional()
-    .nullable()
-    .transform(val => (val === "" || val === undefined || val === null) ? null : val)
-    .refine(val => {
-      if (val === null && !isRequired) return true; // null is valid for optional fields
-      if (!val) return !isRequired; // if empty string and not required, valid. If required, invalid.
-      return /^\d{4}-\d{2}-\d{2}$/.test(val) && isValidDateFns(parseDateFns(val, 'yyyy-MM-dd', new Date()));
-    }, { message: `Invalid ${fieldName.toLowerCase()} format. Expected YYYY-MM-DD.` });
+  // Apply refine before optional/nullable/transform
+  schema = schema.refine(val => {
+    if (!val && !isRequired) return true; // Allow empty for optional fields before further checks
+    if (!val && isRequired) return false; // Fail if required and empty
+    return /^\d{4}-\d{2}-\d{2}$/.test(val!) && isValidDateFns(parseDateFns(val!, 'yyyy-MM-dd', new Date()));
+  }, { message: `Invalid ${fieldName.toLowerCase()} format. Expected YYYY-MM-DD.` });
+  
+  if (!isRequired) {
+    schema = schema.optional().nullable().transform(val => (val === "" || val === undefined || val === null) ? null : val) as any; // Cast needed due to Zod transform complexity with optional/nullable
+  } else {
+     schema = schema.transform(val => (val === "" || val === undefined) ? null : val).nullable() as any; // Ensure required fields can still become null if transformed to empty
+  }
+  return schema;
 };
 
 
@@ -29,16 +33,23 @@ export const patientFormSchema = z.object({
   lastName: z.string().min(1, { message: "Last name is required." }).max(50),
 
   dateOfBirth: z.string()
-    .min(1, { message: "Date of Birth is required." })
-    .refine(val => /^\d{4}-\d{2}-\d{2}$/.test(val) && isValidDateFns(parseDateFns(val, 'yyyy-MM-dd', new Date())), {
+    .min(1, { message: "Date of Birth is required." }) // Initial non-empty check
+    .refine(val => /^\d{4}-\d{2}-\d{2}$/.test(val), {
       message: "Invalid Date of Birth format. Expected YYYY-MM-DD.",
+    })
+    .refine(val => isValidDateFns(parseDateFns(val, 'yyyy-MM-dd', new Date())), {
+        message: "Invalid Date of Birth.",
     })
     .refine(val => {
         const date = parseDateFns(val, 'yyyy-MM-dd', new Date());
-        return isValidDateFns(date) && date <= new Date() && date >= new Date("1900-01-01");
-      }, "Date of birth must be a valid date, not in the future, and after Jan 1, 1900.")
-    .transform(val => (val === "" || val === undefined) ? null : val)
-    .nullable(),
+        return date <= new Date();
+      }, "Date of birth cannot be in the future.")
+    .refine(val => {
+        const date = parseDateFns(val, 'yyyy-MM-dd', new Date());
+        return date >= new Date("1900-01-01");
+      }, "Date of birth must be after Jan 1, 1900.")
+    .transform(val => (val === "" || val === undefined) ? null : val) // Keep this for consistency if needed, but .min(1) handles empty for required
+    .nullable(), // Explicitly allow null if that's a possible state post-transform or initial
 
   sex: z.enum(['male', 'female'], { required_error: "Please select a sex." }),
   mobileNo: z.string().min(10, { message: "Mobile number must be at least 10 digits." }).max(15),
@@ -197,6 +208,5 @@ export const loginFormSchema = z.object({
 });
 
 export type LoginFormData = z.infer<typeof loginFormSchema>;
-
 
     

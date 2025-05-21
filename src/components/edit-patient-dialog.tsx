@@ -187,9 +187,8 @@ export function EditPatientDialog({ patient, isOpen, onOpenChange, onSave }: Edi
       const lastDentalVisitForForm = (patient.lastDentalVisit && isValidDateFns(parseDateFns(patient.lastDentalVisit, 'yyyy-MM-dd', new Date())))
                                    ? patient.lastDentalVisit
                                    : "";
-      
-      const sexForForm = SEX_OPTIONS_CONST.includes(patient.sex as SexType) ? patient.sex : undefined;
 
+      const sexForForm = SEX_OPTIONS_CONST.includes(patient.sex as SexType) ? patient.sex : undefined;
 
       form.reset({
         firstName: patient.firstName || "",
@@ -294,10 +293,10 @@ export function EditPatientDialog({ patient, isOpen, onOpenChange, onSave }: Edi
       const constructedFullName = `${data.firstName} ${data.middleName ? data.middleName + ' ' : ''}${data.lastName}`.trim();
 
       const patientToSave: Patient = {
-        ...patient, 
-        ...data,    
+        ...patient,
+        ...data,
         fullName: constructedFullName,
-        dateOfBirth: data.dateOfBirth ? data.dateOfBirth : "", 
+        dateOfBirth: data.dateOfBirth ? data.dateOfBirth : "",
         effectiveDate: data.effectiveDate ? data.effectiveDate : null,
         lastDentalVisit: data.lastDentalVisit ? data.lastDentalVisit : null,
         physicianSpecialtyOther: data.physicianSpecialty === 'other' ? data.physicianSpecialtyOther : "",
@@ -405,7 +404,7 @@ export function EditPatientDialog({ patient, isOpen, onOpenChange, onSave }: Edi
               <FormField control={form.control} name="mobileNo" render={({ field }) => ( <FormItem> <FormLabel>Mobile No. <span className="text-destructive">*</span></FormLabel> <FormControl><Input type="tel" {...field} /></FormControl> <FormMessage /> </FormItem> )} />
               <FormField control={form.control} name="email" render={({ field }) => ( <FormItem> <FormLabel>Email Address <span className="text-destructive">*</span></FormLabel> <FormControl><Input type="email" {...field} /></FormControl> <FormMessage /> </FormItem> )} />
               <FormField control={form.control} name="address" render={({ field }) => ( <FormItem className="md:col-span-2"> <FormLabel>Address <span className="text-destructive">*</span></FormLabel> <FormControl><Textarea {...field} /></FormControl> <FormMessage /> </FormItem> )} />
-              
+
               <FormField control={form.control} name="religion" render={({ field }) => (
                 <FormItem>
                   <FormLabel>Religion</FormLabel>
@@ -699,15 +698,21 @@ export function EditPatientDialog({ patient, isOpen, onOpenChange, onSave }: Edi
               />
             </div>
 
-            <Button type="submit" className="w-full mt-8" disabled={form.formState.isSubmitting}>
-              <Save className="mr-2 h-4 w-4" />
-              {form.formState.isSubmitting ? "Submitting..." : "Submit Information"}
-            </Button>
+            
+              <DialogClose asChild>
+                <Button type="button" variant="outline">
+                  <X className="mr-2 h-4 w-4" /> Cancel
+                </Button>
+              </DialogClose>
+              <Button type="submit" disabled={form.formState.isSubmitting || !form.formState.isDirty}>
+                <Save className="mr-2 h-4 w-4" />
+                {form.formState.isSubmitting ? "Saving..." : "Save Changes"}
+              </Button>
+          
           </form>
         </Form>
-      </CardContent>
-    </Card>
+      </DialogContent>
+    </Dialog>
   );
 }
 
-    
