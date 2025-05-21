@@ -191,13 +191,13 @@ export function EditPatientDialog({ patient, isOpen, onOpenChange, onSave }: Edi
         officeNo: patient.officeNo || "",
         dentalInsurance: patient.dentalInsurance || "",
         faxNo: patient.faxNo || "",
-        effectiveDate: effectiveDateForForm || null,
+        effectiveDate: effectiveDateForForm || "",
         referredBy: patient.referredBy || "",
         guardianEmail: patient.guardianEmail || "",
         parentOrGuardianName: patient.parentOrGuardianName || "",
         parentOrGuardianOccupation: patient.parentOrGuardianOccupation || "",
         previousDentist: patient.previousDentist || "",
-        lastDentalVisit: lastDentalVisitForForm || null,
+        lastDentalVisit: lastDentalVisitForForm || "",
         physicianName: patient.physicianName || "",
         physicianSpecialty: patient.physicianSpecialty || "",
         physicianSpecialtyOther: patient.physicianSpecialtyOther || "",
@@ -537,7 +537,7 @@ export function EditPatientDialog({ patient, isOpen, onOpenChange, onSave }: Edi
                     <FormControl><SelectTrigger><SelectValue placeholder="Select specialty" /></SelectTrigger></FormControl>
                     <SelectContent>
                       {PHYSICIAN_SPECIALTIES.map(spec => (
-                        <SelectItem key={spec} value={spec}>{spec === 'other' ? 'Other...' : spec}</SelectItem>
+                        <SelectItem key={spec} value={spec}>{spec === 'other' ? 'Other' : spec}</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
@@ -591,7 +591,7 @@ export function EditPatientDialog({ patient, isOpen, onOpenChange, onSave }: Edi
                     <FormControl><SelectTrigger><SelectValue placeholder="Select blood type" /></SelectTrigger></FormControl>
                     <SelectContent>
                       {BLOOD_TYPES.map(type => (
-                        <SelectItem key={type} value={type}>{type === 'other' ? 'Other...' : type}</SelectItem>
+                        <SelectItem key={type} value={type}>{type === 'other' ? 'Other' : type}</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
@@ -654,3 +654,5 @@ export function EditPatientDialog({ patient, isOpen, onOpenChange, onSave }: Edi
     </Dialog>
   );
 }
+
+    

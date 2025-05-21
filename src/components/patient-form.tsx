@@ -109,7 +109,7 @@ export function PatientForm() {
       firstName: "",
       middleName: "",
       lastName: "",
-      dateOfBirth: "",
+      dateOfBirth: "", // Initialize as empty string
       gender: undefined,
       mobileNo: "",
       email: "",
@@ -121,13 +121,13 @@ export function PatientForm() {
       officeNo: "",
       dentalInsurance: "",
       faxNo: "",
-      effectiveDate: "",
+      effectiveDate: "", // Initialize as empty string
       referredBy: "",
       guardianEmail: "",
       parentOrGuardianName: "",
       parentOrGuardianOccupation: "",
       previousDentist: "",
-      lastDentalVisit: "",
+      lastDentalVisit: "", // Initialize as empty string
       physicianName: "",
       physicianSpecialty: "",
       physicianSpecialtyOther: "",
@@ -333,25 +333,25 @@ export function PatientForm() {
                   <FormItem className="flex flex-col">
                     <FormLabel>Date of Birth *</FormLabel>
                     <Popover>
-                        <PopoverTrigger asChild>
-                          <Button
-                            ref={field.ref}
-                            variant={"outline"}
-                            className={cn(
-                              "w-full pl-3 text-left font-normal",
-                              !field.value && "text-muted-foreground"
-                            )}
-                          >
-                            <span className="flex items-center justify-between w-full">
-                              <span>
-                                {field.value && isValidDateFns(parseDateFns(field.value, 'yyyy-MM-dd', new Date()))
-                                  ? formatDateFns(parseDateFns(field.value, 'yyyy-MM-dd', new Date()), "PPP")
-                                  : "Pick a date"}
-                              </span>
-                              <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                      <PopoverTrigger asChild>
+                        <Button
+                          ref={field.ref}
+                          variant={"outline"}
+                          className={cn(
+                            "w-full pl-3 text-left font-normal",
+                            !field.value && "text-muted-foreground"
+                          )}
+                        >
+                          <span className="flex items-center justify-between w-full">
+                            <span>
+                              {field.value && isValidDateFns(parseDateFns(field.value, 'yyyy-MM-dd', new Date()))
+                                ? formatDateFns(parseDateFns(field.value, 'yyyy-MM-dd', new Date()), "PPP")
+                                : "Pick a date"}
                             </span>
-                          </Button>
-                        </PopoverTrigger>
+                            <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                          </span>
+                        </Button>
+                      </PopoverTrigger>
                       <PopoverContent className="w-auto p-0" align="start">
                         <Calendar
                           mode="single"
@@ -526,7 +526,7 @@ export function PatientForm() {
                     <FormControl><SelectTrigger><SelectValue placeholder="Select specialty" /></SelectTrigger></FormControl>
                     <SelectContent>
                       {PHYSICIAN_SPECIALTIES.map(spec => (
-                        <SelectItem key={spec} value={spec}>{spec === 'other' ? 'Other...' : spec}</SelectItem>
+                        <SelectItem key={spec} value={spec}>{spec === 'other' ? 'Other' : spec}</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
@@ -586,7 +586,7 @@ export function PatientForm() {
                     <FormControl><SelectTrigger><SelectValue placeholder="Select blood type" /></SelectTrigger></FormControl>
                     <SelectContent>
                       {BLOOD_TYPES.map(type => (
-                        <SelectItem key={type} value={type}>{type === 'other' ? 'Other...' : type}</SelectItem>
+                        <SelectItem key={type} value={type}>{type === 'other' ? 'Other' : type}</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
@@ -642,3 +642,5 @@ export function PatientForm() {
     </Card>
   );
 }
+
+    
